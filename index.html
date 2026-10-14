@@ -1,0 +1,538 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#7a2335">
+<title>Caja Santa Espina</title>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Caja Espina">
+<style>
+/* App de caja sin conexión: selector Entradas/Tienda arriba, total y método de pago, rejilla de botones grandes, pestañas abajo */
+:root{
+  --bg:#f2f0ee; --surface:#ffffff; --ink:#221d1f; --muted:#6f676a; --line:#e2dcdb;
+  --accent:#7a2335; --accent-ink:#ffffff; --accent-soft:#f1e1e4; --warn:#a4462a; --ok:#2f6b4f;
+  --card:#2f5d9e; --card-ink:#ffffff; --card-soft:#dde6f3; --gold:#9a7a2c;
+  --display:Georgia,"Times New Roman",serif;
+  --body:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  color-scheme:light;
+}
+@media (prefers-color-scheme:dark){:root{
+  --bg:#151213; --surface:#1f1a1c; --ink:#efeaeb; --muted:#a39a9d; --line:#332c2f;
+  --accent:#e08597; --accent-ink:#2a0d14; --accent-soft:#3b2128; --warn:#e58566; --ok:#6cc79c;
+  --card:#86abe6; --card-ink:#0d1a2c; --card-soft:#1e2b3f; --gold:#d6b866; color-scheme:dark}}
+*{box-sizing:border-box}
+html,body{height:100%;margin:0}
+body{background:var(--bg);color:var(--ink);font-family:var(--body);font-size:15px;-webkit-tap-highlight-color:transparent;padding-top:env(safe-area-inset-top,0px)}
+[hidden]{display:none!important}
+.app{display:flex;flex-direction:column;min-height:100%;max-width:600px;margin:0 auto}
+.pad{padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+header{position:sticky;top:0;z-index:5;background:var(--bg);padding-block:10px 10px;border-bottom:1px solid var(--line);display:flex;flex-direction:column;gap:10px}
+.brand{font-family:var(--display);font-variant:small-caps;font-weight:700;font-size:14px;letter-spacing:.1em;color:var(--accent);display:flex;align-items:center;gap:8px}
+.brand svg{width:12px;height:12px;flex:none}
+.pages{display:grid;grid-template-columns:1fr 1fr;gap:0;border-bottom:2px solid var(--line)}
+.pages button{border:0;background:none;padding:10px 4px 9px;font:700 16px var(--body);color:var(--muted);cursor:pointer;border-bottom:3px solid transparent;margin-bottom:-2px}
+.pages button[aria-pressed="true"]{color:var(--accent);border-bottom-color:var(--accent)}
+.top{display:flex;align-items:flex-end;justify-content:space-between;gap:12px}
+.lbl{font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);font-weight:600}
+.total{font-weight:800;font-size:36px;line-height:1;font-variant-numeric:tabular-nums;margin-top:4px}
+.split{text-align:right;font-variant-numeric:tabular-nums;font-size:13px;display:flex;flex-direction:column;gap:3px}
+.split b{font-weight:700}
+.dot{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:6px;vertical-align:1px}
+.dot.ef{background:var(--accent)} .dot.tj{background:var(--card)} .dot.vi{background:var(--gold)}
+.seg{display:grid;grid-template-columns:1fr 1fr;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:4px;gap:4px}
+.seg button{border:0;border-radius:9px;padding:11px 6px;font:700 15px var(--body);background:none;color:var(--muted);cursor:pointer}
+.seg button[aria-pressed="true"][data-m="ef"]{background:var(--accent);color:var(--accent-ink)}
+.seg button[aria-pressed="true"][data-m="tj"]{background:var(--card);color:var(--card-ink)}
+.chips{display:flex;gap:6px;overflow-x:auto;scrollbar-width:none}
+.chips::-webkit-scrollbar{display:none}
+.chips button{flex:none;border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:999px;padding:7px 13px;font:600 13px var(--body);cursor:pointer}
+.chips button[aria-pressed="true"]{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+main{flex:1;padding-block:14px 100px}
+.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+@media (min-width:460px){.grid{grid-template-columns:repeat(3,minmax(0,1fr))}}
+.cell{position:relative;min-width:0}
+.tile{position:relative;width:100%;height:100%;background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:13px 12px 12px;text-align:left;font:inherit;color:inherit;cursor:pointer;min-height:96px;display:flex;flex-direction:column;justify-content:space-between;gap:8px;transition:transform .08s}
+.tile:active{transform:scale(.97)}
+.m-ef .tile.on{border-color:var(--accent);background:var(--accent-soft)}
+.m-tj .tile.on{border-color:var(--card);background:var(--card-soft)}
+.tile .n{font-weight:600;font-size:15px;line-height:1.22;padding-right:34px;word-break:break-word}
+.tile .p{color:var(--muted);font-variant-numeric:tabular-nums;font-size:13px;font-weight:600}
+.tile .p.free{color:var(--gold)}
+.badge{position:absolute;top:10px;right:10px;min-width:28px;height:28px;border-radius:14px;font-weight:800;font-size:15px;display:grid;place-items:center;padding:0 6px;font-variant-numeric:tabular-nums}
+.m-ef .badge{background:var(--accent);color:var(--accent-ink)} .m-tj .badge{background:var(--card);color:var(--card-ink)}
+.minus{position:absolute;bottom:8px;right:8px;width:36px;height:36px;border-radius:10px;border:1px solid var(--line);background:var(--surface);color:var(--ink);font-size:20px;line-height:1;cursor:pointer}
+h3.cat{margin:20px 0 8px;font:700 13px var(--display);font-variant:small-caps;letter-spacing:.1em;color:var(--muted);display:flex;align-items:center;gap:8px}
+h3.cat::after{content:"";flex:1;height:1px;background:var(--line)}
+h3.cat:first-of-type{margin-top:4px}
+.hint{color:var(--muted);font-size:13px;margin:0 0 12px;line-height:1.45}
+nav{position:fixed;left:0;right:0;bottom:0;z-index:6;background:var(--surface);border-top:1px solid var(--line);padding-block:6px calc(6px + env(safe-area-inset-bottom,0px));display:flex;justify-content:center}
+nav .in{display:flex;gap:6px;width:100%;max-width:600px}
+nav button{flex:1;border:0;background:none;color:var(--muted);font:600 13px var(--body);padding:10px 4px;border-radius:10px;cursor:pointer}
+nav button[aria-selected="true"]{background:var(--accent-soft);color:var(--ink)}
+h2{font-family:var(--display);font-weight:700;font-size:22px;margin:4px 0 12px}
+h3{font-weight:700;font-size:16px;margin:26px 0 8px}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:4px 14px}
+.row{display:flex;align-items:center;gap:8px;padding:10px 0;border-bottom:1px solid var(--line);font-variant-numeric:tabular-nums}
+.row:last-child{border-bottom:0}
+.row .grow{flex:1;min-width:0;word-break:break-word}
+.row .q{color:var(--muted);width:40px;text-align:right;flex:none}
+.row .s{width:78px;text-align:right;font-weight:600;flex:none}
+.row.head{font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);font-weight:600;padding:9px 0}
+.row.sub{font:700 12px var(--display);font-variant:small-caps;letter-spacing:.1em;color:var(--muted);padding:12px 0 4px;border-bottom:0}
+.row.tot{font-weight:800;font-size:18px}
+.sum{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-bottom:12px}
+.sum div{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:11px 12px;min-width:0}
+.sum b{display:block;font-weight:800;font-size:20px;margin-top:4px;font-variant-numeric:tabular-nums}
+.btn{display:block;width:100%;border:0;border-radius:12px;padding:15px;font:700 16px var(--body);cursor:pointer;background:var(--accent);color:var(--accent-ink)}
+.btn.ghost{background:transparent;color:var(--ink);border:1px solid var(--line)}
+.btn.danger{background:var(--warn);color:var(--surface)}
+.btn[disabled]{opacity:.5;cursor:default}
+.exp{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.exp .btn{background:var(--surface);color:var(--ink);border:1px solid var(--line);padding:13px;font-size:15px;display:flex;align-items:center;justify-content:center;gap:8px}
+.ext{font:800 10px var(--body);letter-spacing:.06em;padding:3px 5px;border-radius:5px;color:#fff}
+.ext.pdf{background:#b3261e} .ext.xl{background:#1d6f42}
+.mini{border:1px solid var(--line);background:var(--bg);color:var(--ink);border-radius:8px;padding:8px 9px;font:700 11px var(--body);cursor:pointer}
+button:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.stack{display:flex;flex-direction:column;gap:10px;margin-top:16px}
+.field{display:flex;flex-direction:column;gap:6px;flex:1;min-width:0}
+input,select{font:inherit;font-size:16px;padding:12px;border-radius:10px;border:1px solid var(--line);background:var(--bg);color:var(--ink);width:100%}
+.form{display:flex;gap:8px;align-items:flex-end;flex-wrap:wrap}
+.form .wide{flex:1 1 100%}
+.form .price{flex:0 0 96px}
+.form .catf{flex:1 1 140px}
+.form .btn{width:auto;padding:12px 18px}
+.x{border:0;background:none;color:var(--warn);font:600 13px var(--body);padding:8px;cursor:pointer}
+.diff{font-weight:700;margin:0}
+.diff.ok{color:var(--ok)} .diff.bad{color:var(--warn)}
+.empty{text-align:center;color:var(--muted);padding:32px 12px;background:var(--surface);border:1px dashed var(--line);border-radius:14px;line-height:1.5}
+.confirm{background:var(--surface);border:1px solid var(--warn);border-radius:14px;padding:14px;display:flex;flex-direction:column;gap:10px}
+.toast{position:fixed;left:50%;bottom:calc(78px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:10px 16px;border-radius:999px;font-weight:600;font-size:14px;z-index:9;max-width:calc(100% - 32px);text-align:center}
+.small{font-size:13px;color:var(--muted);line-height:1.45}
+.hrow{display:flex;align-items:center;gap:6px;padding:11px 0;border-bottom:1px solid var(--line);font-variant-numeric:tabular-nums}
+.hrow:last-child{border-bottom:0}
+.hrow .grow{flex:1;min-width:0}
+.hrow .s{font-weight:700;white-space:nowrap}
+.warnbox{background:var(--accent-soft);border-radius:12px;padding:12px 14px;font-size:13px;line-height:1.45;margin-bottom:12px}
+@media (prefers-reduced-motion:reduce){.tile{transition:none}}
+</style>
+</head>
+<body>
+<div class="app">
+  <header class="pad">
+    <div class="brand"><svg viewBox="0 0 12 12" aria-hidden="true"><path d="M5 0h2v4h4v2H7v6H5V6H1V4h4z" fill="currentColor"/></svg>Monasterio La Santa Espina</div>
+    <div class="pages" role="group" aria-label="Página">
+      <button data-p="ent" aria-pressed="true">Entradas</button>
+      <button data-p="tie" aria-pressed="false">Tienda</button>
+    </div>
+    <div class="top">
+      <div><div class="lbl" id="hLbl">Vendido en este turno</div><div class="total" id="hTotal">0,00 €</div></div>
+      <div class="split">
+        <span><span class="dot ef"></span>Efectivo <b id="hEf">0,00 €</b></span>
+        <span><span class="dot tj"></span>Tarjeta <b id="hTj">0,00 €</b></span>
+        <span><span class="dot vi"></span><span id="hViL">Visitantes</span> <b id="hVi">0</b></span>
+      </div>
+    </div>
+    <div class="seg" id="seg" role="group" aria-label="Método de pago">
+      <button data-m="ef" aria-pressed="true">Efectivo</button>
+      <button data-m="tj" aria-pressed="false">Tarjeta</button>
+    </div>
+    <div class="chips" id="chips" role="group" aria-label="Secciones"></div>
+  </header>
+  <main class="pad">
+    <section id="vVender"></section>
+    <section id="vCaja" hidden></section>
+    <section id="vCarta" hidden></section>
+  </main>
+  <nav class="pad"><div class="in" role="tablist">
+    <button role="tab" data-v="Vender" aria-selected="true">Vender</button>
+    <button role="tab" data-v="Caja" aria-selected="false">Caja</button>
+    <button role="tab" data-v="Carta" aria-selected="false">Tarifas</button>
+  </div></nav>
+</div>
+<div class="toast" id="toast" hidden></div>
+<input type="file" id="fImport" accept=".json,application/json" hidden>
+
+<script>
+"use strict";
+/* ================= Tarifas de partida (de las hojas del monasterio) ================= */
+const DEF = {
+  ent:{nombre:'Entradas', cats:['Entradas','Grupos','Otros'], productos:[
+    ['Entradas','Entrada individual',5],['Entradas','Familia numerosa (mayores de 12)',4.5],['Entradas','Niño menor de 12 acompañado',0],
+    ['Entradas','Persona con discapacidad',4.5],['Entradas','Desempleado',4.5],['Entradas','Guía profesional',4.5],
+    ['Entradas','Sacerdote o consagrado',0],['Entradas','Trabajador Fundación, Centros JPII o Monasterio',0],['Entradas','Empadronado en La Santa Espina o Castromonte',0],
+    ['Grupos','Grupo hasta 10 personas (por persona)',5],['Grupos','Grupo de 11 a 20 (por persona)',4.5],['Grupos','Grupo de más de 20 (por persona)',4],
+    ['Grupos','Escolar',2],['Grupos','Guía o chófer de grupo (1 cada 25)',0]]},
+  tie:{nombre:'Tienda', cats:['Recuerdos','Bebidas','Miel','Queso','Vino','Otros'], productos:[
+    ['Recuerdos','Acuarela',1],['Recuerdos','Pinturas',3],['Recuerdos','Postales',2],['Recuerdos','Tablillas',2],['Recuerdos','Libro Miraran',29],
+    ['Recuerdos','Libro Monasterio',7.5],['Recuerdos','Cuaderno',8],['Recuerdos','Lápiz',2.5],['Recuerdos','Botella termo',10],['Recuerdos','Camiseta',12],['Recuerdos','Bolsa logo',2.5],
+    ['Bebidas','Botella de agua',0.75],['Bebidas','Refresco Burbuja',1.5],['Bebidas','Refresco Tea',2],
+    ['Miel','Miel de espliego 1 kg',12],['Miel','Miel de espliego 500 g',7],['Miel','Miel de tomillo 1 kg',12],['Miel','Miel de tomillo 500 g',7],
+    ['Miel','Miel de encina 750 g',11],['Miel','Miel de encina 500 g',7],['Miel','Pack miel 2 × 500 g',12.5],['Miel','Pack miel 3 × 500 g',18],
+    ['Queso','Queso oveja leche cruda semicurado (cuña)',14],['Queso','Queso oveja leche cruda curado (cuña)',14],['Queso','Queso oveja leche cruda semicurado (entero)',23],
+    ['Vino','Convento Las Claras blanco verdejo',10],['Vino','Convento Las Claras tinto roble',14],['Vino','Convento Las Claras tinto crianza',20],
+    ['Vino','Pack CLC: 2 verdejos + 1 roble',30],['Vino','Pack CLC: 2 robles + 1 verdejo',32],['Vino','Pack CLC: verdejo, roble y crianza',39],['Vino','Pack CLC: roble, crianza y reserva',59]]}
+};
+
+/* ================= utilidades ================= */
+const eur = n => (Math.round(n*100)/100).toLocaleString('es-ES',{minimumFractionDigits:2,maximumFractionDigits:2})+' €';
+const nf  = n => (Math.round(n*100)/100).toLocaleString('es-ES',{minimumFractionDigits:2,maximumFractionDigits:2});
+const esc = s => String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const uid = () => Math.random().toString(36).slice(2,10);
+const r2  = n => Math.round(n*100)/100;
+const NOMBRE = {ef:'Efectivo', tj:'Tarjeta'};
+const fmtF = ms => new Date(ms).toLocaleString('es-ES',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'});
+const stamp = ms => { const d=new Date(ms), z=n=>String(n).padStart(2,'0'); return `${d.getFullYear()}-${z(d.getMonth()+1)}-${z(d.getDate())}_${z(d.getHours())}${z(d.getMinutes())}`; };
+
+/* ================= estado y guardado en el móvil ================= */
+const KEY='santaespina_caja_v1';
+function nuevaSec(k){ return {productos:DEF[k].productos.map(([cat,nombre,precio])=>({id:uid(),cat,nombre,precio})),counts:{ef:{},tj:{}},inicio:Date.now(),cierres:[]}; }
+let D;
+try{ D=JSON.parse(localStorage.getItem(KEY)||'null'); }catch(e){ D=null; }
+if(!D||!D.sec){ D={sec:{ent:nuevaSec('ent'),tie:nuevaSec('tie')},pagina:'ent',metodo:'ef'}; }
+['ent','tie'].forEach(k=>{ if(!D.sec[k]) D.sec[k]=nuevaSec(k); const s=D.sec[k]; s.counts=s.counts||{ef:{},tj:{}}; s.counts.ef=s.counts.ef||{}; s.counts.tj=s.counts.tj||{}; s.cierres=s.cierres||[]; });
+let guardadoOK=true;
+function save(){ try{ localStorage.setItem(KEY,JSON.stringify(D)); guardadoOK=true; }catch(e){ if(guardadoOK) toast('No se puede guardar en este navegador. Haz copias de seguridad.'); guardadoOK=false; } }
+const UI={view:'Vender',filtro:'Todo',confirmar:false,contado:''};
+const sec = () => D.sec[D.pagina];
+const cats = () => DEF[D.pagina].cats;
+const catOrd = c => { const i=cats().indexOf(c); return i<0?99:i; };
+
+/* ================= cálculos ================= */
+const cnt=(m,id)=>sec().counts[m][id]||0;
+function lineas(){
+  return sec().productos.filter(p=>cnt('ef',p.id)||cnt('tj',p.id)).map(p=>{
+    const ef=cnt('ef',p.id), tj=cnt('tj',p.id);
+    return {cat:p.cat||'Otros',nombre:p.nombre,precio:p.precio,ef,tj,cant:ef+tj,subtotal:r2(p.precio*(ef+tj))};
+  }).sort((a,b)=>catOrd(a.cat)-catOrd(b.cat));
+}
+function resumen(l){
+  const tEf=r2(l.reduce((a,x)=>a+x.precio*x.ef,0)), tTj=r2(l.reduce((a,x)=>a+x.precio*x.tj,0));
+  return {tEf,tTj,total:r2(tEf+tTj),uds:l.reduce((a,x)=>a+x.cant,0)};
+}
+function totales(){ const l=lineas(); return {l,...resumen(l)}; }
+
+/* ================= acciones ================= */
+function sumar(id,d){
+  const s=sec(); let m=D.metodo;
+  if(d<0 && !cnt(m,id)) m = m==='ef'?'tj':'ef';
+  const n=cnt(m,id)+d;
+  if(n<=0) delete s.counts[m][id]; else s.counts[m][id]=n;
+  save(); render();
+}
+function cierreActual(){
+  const t=totales(), s=sec();
+  const c = UI.contado.trim()==='' ? null : parseFloat(UI.contado.replace(',','.'));
+  return {pagina:D.pagina,fecha:Date.now(),inicio:s.inicio,total:t.total,efectivo:t.tEf,tarjeta:t.tTj,unidades:t.uds,lineas:t.l,contado:(c==null||isNaN(c))?null:c};
+}
+function cerrarCaja(){
+  const c=cierreActual(), s=sec();
+  s.cierres.unshift(c); s.cierres=s.cierres.slice(0,200);
+  s.counts={ef:{},tj:{}}; s.inicio=Date.now(); UI.confirmar=false; UI.contado='';
+  save(); render(); toast('Caja cerrada: '+eur(c.total));
+}
+
+/* ================= descarga de archivos ================= */
+function descargar(nombre,bytes,mime){
+  try{
+    const blob=new Blob([bytes],{type:mime}), url=URL.createObjectURL(blob);
+    const a=document.createElement('a'); a.href=url; a.download=nombre; document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(()=>URL.revokeObjectURL(url),60000);
+    toast('Descargado: '+nombre);
+  }catch(e){ toast('No se pudo descargar el archivo'); }
+}
+
+/* ================= generador de PDF (sin librerías) ================= */
+const HW=[278,278,355,556,556,889,667,191,333,333,389,584,278,333,278,278,556,556,556,556,556,556,556,556,556,556,278,278,584,584,584,556,1015,667,667,722,722,667,611,778,722,278,500,667,556,833,722,778,667,778,722,667,611,722,667,944,667,667,611,278,278,278,469,556,333,556,556,500,556,556,278,556,556,222,222,500,222,833,556,556,556,556,333,500,278,556,500,722,500,500,500,334,260,334,584];
+const HB=[278,333,474,556,556,889,722,238,333,333,389,584,278,333,278,278,556,556,556,556,556,556,556,556,556,556,333,333,584,584,584,611,975,722,722,722,722,667,611,778,722,278,556,722,611,833,722,778,667,778,722,667,611,722,667,944,667,667,611,333,278,333,584,556,333,556,611,556,611,556,333,611,611,278,278,556,278,889,611,611,611,611,389,556,333,611,556,778,556,556,500,389,280,389,584];
+const WINX={'€':128,'‚':130,'„':132,'…':133,'‘':145,'’':146,'“':147,'”':148,'•':149,'–':150,'—':151,'−':45};
+function winAnsi(s){ let o=''; for(const ch of String(s)){ const c=ch.codePointAt(0); let b;
+  if(WINX[ch]!=null) b=WINX[ch]; else if(c<128||(c>=160&&c<=255)) b=c; else b=63; o+=String.fromCharCode(b); } return o; }
+function textW(s,size,bold){ const T=bold?HB:HW; let w=0;
+  for(const ch of String(s)){ const base=ch.normalize('NFD')[0]; const c=base.charCodeAt(0);
+    w+= (c>=32&&c<=126)?T[c-32]:(ch==='€'?556:ch==='·'?278:556); } return w*size/1000; }
+function fit(s,size,bold,max){ if(textW(s,size,bold)<=max) return s; while(s.length>1&&textW(s+'…',size,bold)>max) s=s.slice(0,-1); return s+'…'; }
+function makePDF(){
+  const W=595.28,H=841.89,pages=[];let cur=null;
+  const col=c=>c.map(v=>(v/255).toFixed(3)).join(' ');
+  const api={W,H,pages,
+    page(){cur=[];pages.push(cur);},
+    text(x,y,s,o={}){const size=o.size||10,bold=!!o.bold;let xx=x;
+      if(o.align==='right') xx=x-textW(s,size,bold); else if(o.align==='center') xx=x-textW(s,size,bold)/2;
+      const e=winAnsi(s).replace(/\\/g,'\\\\').replace(/\(/g,'\\(').replace(/\)/g,'\\)');
+      cur.push(`BT /${bold?'F2':'F1'} ${size} Tf ${col(o.color||[34,29,31])} rg ${xx.toFixed(2)} ${(H-y).toFixed(2)} Td (${e}) Tj ET`);},
+    rect(x,y,w,h,fill,stroke){ if(fill) cur.push(`${col(fill)} rg ${x.toFixed(2)} ${(H-y-h).toFixed(2)} ${w.toFixed(2)} ${h.toFixed(2)} re f`);
+      if(stroke) cur.push(`${col(stroke)} RG 0.6 w ${x.toFixed(2)} ${(H-y-h).toFixed(2)} ${w.toFixed(2)} ${h.toFixed(2)} re S`);},
+    line(x1,y1,x2,y2,c,w){cur.push(`${col(c||[226,220,219])} RG ${w||0.5} w ${x1.toFixed(2)} ${(H-y1).toFixed(2)} m ${x2.toFixed(2)} ${(H-y2).toFixed(2)} l S`);},
+    build(){
+      const objs=[]; const add=s=>{objs.push(s);return objs.length;};
+      add('<< /Type /Catalog /Pages 2 0 R >>'); add('PAGES');
+      add('<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica /Encoding /WinAnsiEncoding >>');
+      add('<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold /Encoding /WinAnsiEncoding >>');
+      const kids=[];
+      pages.forEach(p=>{ const st=p.join('\n');
+        const cid=add(`<< /Length ${st.length} >>\nstream\n${st}\nendstream`);
+        kids.push(add(`<< /Type /Page /Parent 2 0 R /MediaBox [0 0 ${W} ${H}] /Resources << /Font << /F1 3 0 R /F2 4 0 R >> >> /Contents ${cid} 0 R >>`)); });
+      objs[1]=`<< /Type /Pages /Kids [${kids.map(k=>k+' 0 R').join(' ')}] /Count ${kids.length} >>`;
+      let out='%PDF-1.4\n%\xE2\xE3\xCF\xD3\n'; const off=[];
+      objs.forEach((o,i)=>{off.push(out.length); out+=`${i+1} 0 obj\n${o}\nendobj\n`;});
+      const xr=out.length;
+      out+=`xref\n0 ${objs.length+1}\n0000000000 65535 f \n`+off.map(o=>String(o).padStart(10,'0')+' 00000 n \n').join('');
+      out+=`trailer\n<< /Size ${objs.length+1} /Root 1 0 R >>\nstartxref\n${xr}\n%%EOF`;
+      const u=new Uint8Array(out.length); for(let i=0;i<out.length;i++) u[i]=out.charCodeAt(i)&255; return u;
+    }};
+  return api;
+}
+function pdfDe(c){
+  const P=makePDF(), W=P.W, H=P.H, M=40, wine=[122,35,53], grey=[111,103,106], esEnt=c.pagina==='ent';
+  const R=resumen(c.lineas||[]);
+  const cab=()=>{ P.page();
+    P.rect(M,38,3,34,wine);
+    P.text(M+12,54,'Monasterio La Santa Espina',{size:16,bold:true});
+    P.text(M+12,70,'Cierre de caja · '+(esEnt?'Venta de entradas':'Tienda'),{size:10,color:grey});
+    P.text(W-M,52,'Desde '+fmtF(c.inicio),{size:9,color:grey,align:'right'});
+    P.text(W-M,66,'Hasta '+fmtF(c.fecha),{size:9,color:grey,align:'right'}); };
+  const X={pvp:330,ef:385,tj:435,uds:480,imp:W-M};
+  const head=y=>{ P.text(M,y,'ARTÍCULO',{size:7.5,bold:true,color:grey}); P.text(X.pvp,y,'PVP',{size:7.5,bold:true,color:grey,align:'right'});
+    P.text(X.ef,y,'EFEC.',{size:7.5,bold:true,color:grey,align:'right'}); P.text(X.tj,y,'TARJ.',{size:7.5,bold:true,color:grey,align:'right'});
+    P.text(X.uds,y,'UDS',{size:7.5,bold:true,color:grey,align:'right'}); P.text(X.imp,y,'IMPORTE',{size:7.5,bold:true,color:grey,align:'right'});
+    P.line(M,y+5,W-M,y+5,[180,172,174],0.8); return y+19; };
+  cab();
+  const cajas=[['TOTAL',nf(c.total)+' €'],['EFECTIVO',nf(c.efectivo)+' €'],['TARJETA',nf(c.tarjeta)+' €'],[esEnt?'VISITANTES':'UNIDADES',String(c.unidades!=null?c.unidades:R.uds)]];
+  const bw=(W-2*M-24)/4;
+  cajas.forEach((b,i)=>{ const x=M+i*(bw+8); P.rect(x,90,bw,46,[248,246,245],[226,220,219]);
+    P.text(x+10,106,b[0],{size:7.5,bold:true,color:grey}); P.text(x+10,126,b[1],{size:14,bold:true}); });
+  let y=head(164), cat=null;
+  const salto=need=>{ if(y+need>H-56){ cab(); y=head(100); } };
+  (c.lineas||[]).forEach(x=>{
+    if(x.cat!==cat){ cat=x.cat; salto(36); y+=4; P.text(M,y,String(cat||'Otros').toUpperCase(),{size:8,bold:true,color:wine}); y+=15; }
+    salto(17);
+    P.text(M,y,fit(x.nombre,9.5,false,X.pvp-M-50),{size:9.5});
+    P.text(X.pvp,y,x.precio?nf(x.precio)+' €':'Gratuita',{size:9.5,align:'right',color:x.precio?[34,29,31]:[154,122,44]});
+    P.text(X.ef,y,x.ef?String(x.ef):'·',{size:9.5,align:'right',color:grey});
+    P.text(X.tj,y,x.tj?String(x.tj):'·',{size:9.5,align:'right',color:grey});
+    P.text(X.uds,y,String(x.cant),{size:9.5,align:'right'});
+    P.text(X.imp,y,nf(x.subtotal)+' €',{size:9.5,align:'right'});
+    P.line(M,y+5,W-M,y+5); y+=17;
+  });
+  salto(40); y+=4; P.line(M,y-8,W-M,y-8,wine,1.2); y+=6;
+  P.text(M,y,'Total',{size:12,bold:true}); P.text(X.uds,y,String(c.unidades!=null?c.unidades:R.uds),{size:12,bold:true,align:'right'});
+  P.text(X.imp,y,nf(c.total)+' €',{size:12,bold:true,align:'right'}); y+=26;
+  if(c.contado!=null){ salto(20); const d=r2(c.contado-c.efectivo);
+    P.text(M,y,'Efectivo contado en caja: '+nf(c.contado)+' €',{size:10});
+    P.text(W-M,y,Math.abs(d)<0.005?'El efectivo cuadra':(d>0?'Sobran ':'Faltan ')+nf(Math.abs(d))+' €',{size:10,bold:true,align:'right',color:Math.abs(d)<0.005?[47,107,79]:[164,70,42]}); }
+  const n=P.pages.length;
+  P.pages.forEach((pg,i)=>{ pg.push(''); const saved=pg; // pie de página
+    const tmp=makePDF(); tmp.page(); tmp.text(M,H-28,'Generado el '+fmtF(Date.now()),{size:8,color:[150,143,146]});
+    tmp.text(W-M,H-28,'Página '+(i+1)+' de '+n,{size:8,color:[150,143,146],align:'right'}); saved.push(...tmp.pages[0]); });
+  return P.build();
+}
+
+/* ================= generador de Excel .xlsx (sin librerías) ================= */
+const CRC=(()=>{const t=new Uint32Array(256);for(let n=0;n<256;n++){let c=n;for(let k=0;k<8;k++)c=c&1?0xEDB88320^(c>>>1):c>>>1;t[n]=c>>>0;}return t;})();
+function crc32(u){let c=0xFFFFFFFF;for(let i=0;i<u.length;i++)c=CRC[(c^u[i])&255]^(c>>>8);return (c^0xFFFFFFFF)>>>0;}
+function zip(files){
+  const enc=new TextEncoder(), parts=[], cen=[]; let off=0;
+  const d=new Date(), dt=((d.getHours()<<11)|(d.getMinutes()<<5)|(d.getSeconds()>>1))&0xFFFF, dd=(((d.getFullYear()-1980)<<9)|((d.getMonth()+1)<<5)|d.getDate())&0xFFFF;
+  files.forEach(f=>{
+    const name=enc.encode(f.name), data=enc.encode(f.data), crc=crc32(data);
+    const h=new DataView(new ArrayBuffer(30));
+    h.setUint32(0,0x04034b50,true);h.setUint16(4,20,true);h.setUint16(6,0x0800,true);h.setUint16(8,0,true);h.setUint16(10,dt,true);h.setUint16(12,dd,true);
+    h.setUint32(14,crc,true);h.setUint32(18,data.length,true);h.setUint32(22,data.length,true);h.setUint16(26,name.length,true);h.setUint16(28,0,true);
+    parts.push(new Uint8Array(h.buffer),name,data);
+    const c=new DataView(new ArrayBuffer(46));
+    c.setUint32(0,0x02014b50,true);c.setUint16(4,20,true);c.setUint16(6,20,true);c.setUint16(8,0x0800,true);c.setUint16(10,0,true);c.setUint16(12,dt,true);c.setUint16(14,dd,true);
+    c.setUint32(16,crc,true);c.setUint32(20,data.length,true);c.setUint32(24,data.length,true);c.setUint16(28,name.length,true);
+    c.setUint32(42,off,true);
+    cen.push(new Uint8Array(c.buffer),name);
+    off+=30+name.length+data.length;
+  });
+  const cs=cen.reduce((a,b)=>a+b.length,0), e=new DataView(new ArrayBuffer(22));
+  e.setUint32(0,0x06054b50,true);e.setUint16(8,files.length,true);e.setUint16(10,files.length,true);e.setUint32(12,cs,true);e.setUint32(16,off,true);
+  const all=[...parts,...cen,new Uint8Array(e.buffer)], out=new Uint8Array(all.reduce((a,b)=>a+b.length,0)); let p=0;
+  all.forEach(b=>{out.set(b,p);p+=b.length;}); return out;
+}
+const xe=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+function xlsxDe(c){
+  const L=c.lineas||[], esEnt=c.pagina==='ent', rows=[];
+  // estilos: 0 normal, 1 negrita, 2 moneda, 3 negrita moneda, 4 título, 5 cabecera, 6 sección, 7 gris
+  const S=(r,col,v,s,f)=>{ (rows[r]=rows[r]||[]).push({col,v,s:s||0,f}); };
+  S(1,'A','Monasterio La Santa Espina',4);
+  S(2,'A','Cierre de caja · '+(esEnt?'Venta de entradas':'Tienda'),7);
+  S(3,'A','Desde',1); S(3,'B',fmtF(c.inicio));
+  S(4,'A','Hasta',1); S(4,'B',fmtF(c.fecha));
+  const H=['Sección','Artículo','PVP','Uds efectivo','Uds tarjeta','Unidades','Importe efectivo','Importe tarjeta','Importe'];
+  H.forEach((h,i)=>S(6,'ABCDEFGHI'[i],h,5));
+  const first=7;
+  L.forEach((x,i)=>{ const r=first+i;
+    S(r,'A',x.cat,6); S(r,'B',x.nombre); S(r,'C',x.precio,2); S(r,'D',x.ef); S(r,'E',x.tj);
+    S(r,'F',x.cant,0,`D${r}+E${r}`); S(r,'G',r2(x.precio*x.ef),2,`C${r}*D${r}`); S(r,'H',r2(x.precio*x.tj),2,`C${r}*E${r}`); S(r,'I',x.subtotal,3,`C${r}*F${r}`); });
+  const last=first+L.length-1, tr=Math.max(last+1,first);
+  const R=resumen(L), sm=(col,v,s)=>S(tr,col,v,s,L.length?`SUM(${col}${first}:${col}${last})`:null);
+  S(tr,'A','TOTAL',1); sm('D',L.reduce((a,x)=>a+x.ef,0),1); sm('E',L.reduce((a,x)=>a+x.tj,0),1); sm('F',R.uds,1); sm('G',R.tEf,3); sm('H',R.tTj,3); sm('I',R.total,3);
+  let r=tr+2;
+  if(esEnt){ S(r,'A','Visitantes',1); S(r,'C',R.uds,1,`F${tr}`); r++; }
+  if(c.contado!=null){ S(r,'A','Efectivo contado en caja',1); S(r,'C',c.contado,2); r++;
+    S(r,'A','Diferencia (contado − ventas en efectivo)',1); S(r,'C',r2(c.contado-R.tEf),3,`C${r-1}-G${tr}`); r++; }
+  const sheetRows=Object.keys(rows).map(Number).sort((a,b)=>a-b).map(rn=>`<row r="${rn}">`+rows[rn].map(k=>{
+    const ref=k.col+rn;
+    if(typeof k.v==='number') return `<c r="${ref}" s="${k.s}">${k.f?`<f>${xe(k.f)}</f>`:''}<v>${k.v}</v></c>`;
+    return `<c r="${ref}" s="${k.s}" t="inlineStr"><is><t xml:space="preserve">${xe(k.v)}</t></is></c>`;
+  }).join('')+'</row>').join('');
+  const sheet=`<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><sheetViews><sheetView workbookViewId="0"><pane ySplit="6" topLeftCell="A7" activePane="bottomLeft" state="frozen"/></sheetView></sheetViews><cols><col min="1" max="1" width="13" customWidth="1"/><col min="2" max="2" width="46" customWidth="1"/><col min="3" max="3" width="11" customWidth="1"/><col min="4" max="6" width="12" customWidth="1"/><col min="7" max="8" width="16" customWidth="1"/><col min="9" max="9" width="13" customWidth="1"/></cols><sheetData>${sheetRows}</sheetData><mergeCells count="1"><mergeCell ref="A1:I1"/></mergeCells><pageSetup orientation="landscape" fitToWidth="1"/></worksheet>`;
+  const styles=`<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<styleSheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><numFmts count="1"><numFmt numFmtId="164" formatCode="#,##0.00\\ &quot;€&quot;"/></numFmts><fonts count="5"><font><sz val="11"/><name val="Calibri"/></font><font><b/><sz val="11"/><name val="Calibri"/></font><font><b/><sz val="15"/><color rgb="FF7A2335"/><name val="Calibri"/></font><font><sz val="10"/><color rgb="FF6F676A"/><name val="Calibri"/></font><font><b/><sz val="10"/><color rgb="FF7A2335"/><name val="Calibri"/></font></fonts><fills count="3"><fill><patternFill patternType="none"/></fill><fill><patternFill patternType="gray125"/></fill><fill><patternFill patternType="solid"><fgColor rgb="FFF1E1E4"/><bgColor indexed="64"/></patternFill></fill></fills><borders count="2"><border><left/><right/><top/><bottom/><diagonal/></border><border><left/><right/><top/><bottom style="thin"><color rgb="FF7A2335"/></bottom><diagonal/></border></borders><cellStyleXfs count="1"><xf numFmtId="0" fontId="0" fillId="0" borderId="0"/></cellStyleXfs><cellXfs count="8"><xf numFmtId="0" fontId="0" fillId="0" borderId="0" xfId="0"/><xf numFmtId="0" fontId="1" fillId="0" borderId="0" xfId="0" applyFont="1"/><xf numFmtId="164" fontId="0" fillId="0" borderId="0" xfId="0" applyNumberFormat="1"/><xf numFmtId="164" fontId="1" fillId="0" borderId="0" xfId="0" applyNumberFormat="1" applyFont="1"/><xf numFmtId="0" fontId="2" fillId="0" borderId="0" xfId="0" applyFont="1"/><xf numFmtId="0" fontId="1" fillId="2" borderId="1" xfId="0" applyFont="1" applyFill="1" applyBorder="1"/><xf numFmtId="0" fontId="4" fillId="0" borderId="0" xfId="0" applyFont="1"/><xf numFmtId="0" fontId="3" fillId="0" borderId="0" xfId="0" applyFont="1"/></cellXfs><cellStyles count="1"><cellStyle name="Normal" xfId="0" builtinId="0"/></cellStyles></styleSheet>`;
+  const files=[
+    {name:'[Content_Types].xml',data:`<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/><Override PartName="/xl/worksheets/sheet1.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/><Override PartName="/xl/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.styles+xml"/></Types>`},
+    {name:'_rels/.rels',data:`<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="xl/workbook.xml"/></Relationships>`},
+    {name:'xl/workbook.xml',data:`<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><sheets><sheet name="${esEnt?'Entradas':'Tienda'}" sheetId="1" r:id="rId1"/></sheets><calcPr calcId="191029" fullCalcOnLoad="1"/></workbook>`},
+    {name:'xl/_rels/workbook.xml.rels',data:`<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet1.xml"/><Relationship Id="rId2" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/></Relationships>`},
+    {name:'xl/worksheets/sheet1.xml',data:sheet},
+    {name:'xl/styles.xml',data:styles}
+  ];
+  return zip(files);
+}
+function exportar(tipo,c){
+  const base=`santa-espina_${c.pagina==='ent'?'entradas':'tienda'}_${stamp(c.fecha)}`;
+  try{
+    if(tipo==='pdf') descargar(base+'.pdf',pdfDe(c),'application/pdf');
+    else descargar(base+'.xlsx',xlsxDe(c),'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+  }catch(e){ toast('No se pudo crear el archivo'); }
+}
+
+/* ================= vistas ================= */
+function grupos(ps){ const g=[]; ps.forEach(p=>{const k=p.cat||'Otros'; let x=g.find(y=>y.k===k); if(!x){x={k,ps:[]};g.push(x);} x.ps.push(p);}); return g.sort((a,b)=>catOrd(a.k)-catOrd(b.k)); }
+function render(){
+  const t=totales(), esEnt=D.pagina==='ent';
+  document.querySelectorAll('.pages button').forEach(b=>b.setAttribute('aria-pressed',b.dataset.p===D.pagina));
+  document.getElementById('hLbl').textContent=esEnt?'Entradas vendidas en este turno':'Tienda: vendido en este turno';
+  document.getElementById('hTotal').textContent=eur(t.total);
+  document.getElementById('hEf').textContent=eur(t.tEf);
+  document.getElementById('hTj').textContent=eur(t.tTj);
+  document.getElementById('hViL').textContent=esEnt?'Visitantes':'Artículos';
+  document.getElementById('hVi').textContent=t.uds;
+  const vend=UI.view==='Vender';
+  document.getElementById('seg').hidden=!vend;
+  document.querySelectorAll('#seg button').forEach(b=>b.setAttribute('aria-pressed',b.dataset.m===D.metodo));
+  document.querySelectorAll('nav button').forEach(b=>b.setAttribute('aria-selected',b.dataset.v===UI.view));
+  ['Vender','Caja','Carta'].forEach(v=>document.getElementById('v'+v).hidden=v!==UI.view);
+  const cs=grupos(sec().productos).map(g=>g.k);
+  if(UI.filtro!=='Todo'&&!cs.includes(UI.filtro)) UI.filtro='Todo';
+  const ch=document.getElementById('chips'); ch.hidden=!vend||cs.length<3;
+  ch.innerHTML=['Todo',...cs].map(c=>`<button data-f="${esc(c)}" aria-pressed="${UI.filtro===c}">${esc(c)}</button>`).join('');
+  if(vend) renderVender();
+  if(UI.view==='Caja') renderCaja(t);
+  if(UI.view==='Carta') renderCarta();
+}
+function renderVender(){
+  const el=document.getElementById('vVender'), m=D.metodo; el.className='m-'+m;
+  if(!sec().productos.length){ el.innerHTML='<div class="empty">Aún no hay tarifas.<br>Añádelas en la pestaña <b>Tarifas</b>.</div>'; return; }
+  const gs=grupos(sec().productos).filter(g=>UI.filtro==='Todo'||g.k===UI.filtro);
+  el.innerHTML=`<p class="hint">Cobrando en <b>${NOMBRE[m].toLowerCase()}</b>. Toca ${D.pagina==='ent'?'una entrada por cada persona':'un artículo cada vez que lo vendas'}. El botón − quita uno.</p>`+
+    gs.map(g=>`<h3 class="cat">${esc(g.k)}</h3><div class="grid">`+g.ps.map(p=>{
+      const c=cnt(m,p.id), any=c||cnt('ef',p.id)+cnt('tj',p.id);
+      return `<div class="cell"><button class="tile${c?' on':''}" data-add="${p.id}" aria-label="Sumar ${esc(p.nombre)}">
+        <span class="n">${esc(p.nombre)}</span><span class="p${p.precio?'':' free'}">${p.precio?eur(p.precio):'Gratuita'}</span>
+        ${c?`<span class="badge">${c}</span>`:''}</button>
+        ${any?`<button class="minus" data-sub="${p.id}" aria-label="Quitar uno de ${esc(p.nombre)}">−</button>`:''}</div>`;
+    }).join('')+'</div>').join('');
+}
+function cuadre(t){
+  const c=parseFloat(String(UI.contado).replace(',','.'));
+  if(UI.contado.trim()===''||isNaN(c)) return '';
+  const d=c-t.tEf;
+  return `<p class="diff ${Math.abs(d)<0.005?'ok':'bad'}">${Math.abs(d)<0.005?'El efectivo cuadra':(d>0?'Sobran ':'Faltan ')+eur(Math.abs(d))}</p>`;
+}
+function tabla(l,total){
+  let h='<div class="card"><div class="row head"><span class="grow">Artículo</span><span class="q">Efec.</span><span class="q">Tarj.</span><span class="s">Importe</span></div>', cat=null;
+  l.forEach(x=>{ if(x.cat!==cat){cat=x.cat; h+=`<div class="row sub">${esc(cat)}</div>`;}
+    h+=`<div class="row"><span class="grow">${esc(x.nombre)}</span><span class="q">${x.ef||'·'}</span><span class="q">${x.tj||'·'}</span><span class="s">${x.precio?eur(x.subtotal):'Gratis'}</span></div>`; });
+  return h+`<div class="row tot"><span class="grow">Total</span><span class="s">${eur(total)}</span></div></div>`;
+}
+function renderCaja(t){
+  const el=document.getElementById('vCaja'), s=sec(), esEnt=D.pagina==='ent';
+  const desde=new Date(s.inicio).toLocaleString('es-ES',{weekday:'short',day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'});
+  let h=`<h2>Caja de ${esEnt?'entradas':'la tienda'}</h2><p class="small" style="margin:-6px 0 12px">Abierta desde ${desde}</p>
+    <div class="sum"><div><span class="lbl"><span class="dot ef"></span>Efectivo</span><b>${eur(t.tEf)}</b></div>
+    <div><span class="lbl"><span class="dot tj"></span>Tarjeta</span><b>${eur(t.tTj)}</b></div>
+    <div><span class="lbl"><span class="dot vi"></span>${esEnt?'Visitas':'Artículos'}</span><b>${t.uds}</b></div></div>`;
+  h+= t.l.length ? tabla(t.l,t.total) : '<div class="empty">Todavía no hay ventas en este turno.</div>';
+  h+=`<div class="stack"><div class="field"><label class="lbl" for="contado">Efectivo contado en caja (opcional)</label>
+     <input id="contado" inputmode="decimal" placeholder="Debería haber ${eur(t.tEf)}" value="${esc(UI.contado)}"></div><div id="diffBox">${cuadre(t)}</div>`;
+  if(t.uds) h+=`<div class="exp"><button class="btn" data-exp="pdf" data-k="actual"><span class="ext pdf">PDF</span>Descargar PDF</button><button class="btn" data-exp="xlsx" data-k="actual"><span class="ext xl">XLSX</span>Descargar Excel</button></div>`;
+  if(UI.confirmar) h+=`<div class="confirm"><b>¿Cerrar la caja con ${eur(t.total)}?</b><span class="small">${eur(t.tEf)} en efectivo y ${eur(t.tTj)} con tarjeta. Se guarda en el historial y los contadores vuelven a cero.</span>
+     <button class="btn danger" data-act="cerrar">Sí, cerrar caja</button><button class="btn ghost" data-act="cancelar">Cancelar</button></div>`;
+  else h+=`<button class="btn" data-act="confirmar" ${t.uds?'':'disabled'}>Cerrar caja</button>`;
+  h+='</div><h3>Cierres anteriores</h3>';
+  if(!s.cierres.length) h+='<p class="small">Aquí aparecerá cada caja que cierres, con su PDF y su Excel.</p>';
+  else h+='<div class="card">'+s.cierres.slice(0,60).map((x,i)=>{
+      const f=new Date(x.fecha).toLocaleString('es-ES',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'});
+      const dd=x.contado!=null?x.contado-x.efectivo:null;
+      return `<div class="hrow"><span class="grow">${f} · <span class="s">${eur(x.total)}</span><br><span class="small">Efec. ${eur(x.efectivo)} · Tarj. ${eur(x.tarjeta)} · ${x.unidades} ${esEnt?'visit.':'uds'}${dd!=null&&Math.abs(dd)>=0.005?` · ${dd>0?'sobraron':'faltaron'} ${eur(Math.abs(dd))}`:''}</span></span>
+        <button class="mini" data-exp="pdf" data-k="${i}" aria-label="PDF del cierre del ${f}">PDF</button><button class="mini" data-exp="xlsx" data-k="${i}" aria-label="Excel del cierre del ${f}">XLSX</button></div>`}).join('')+'</div>';
+  el.innerHTML=h;
+}
+function renderCarta(){
+  const el=document.getElementById('vCarta'), esEnt=D.pagina==='ent';
+  let h=`<h2>Tarifas de ${esEnt?'entradas':'la tienda'}</h2><form class="form" id="fAdd">
+    <div class="field wide"><label class="lbl" for="pNombre">${esEnt?'Tipo de entrada':'Artículo'}</label><input id="pNombre" placeholder="${esEnt?'Ej. Peregrino':'Ej. Rosario de madera'}" required></div>
+    <div class="field catf"><label class="lbl" for="pCat">Sección</label><select id="pCat">${cats().map(c=>`<option>${c}</option>`).join('')}</select></div>
+    <div class="field price"><label class="lbl" for="pPrecio">Precio €</label><input id="pPrecio" inputmode="decimal" placeholder="0 = gratis" required></div>
+    <button class="btn" type="submit">Añadir</button></form>`;
+  h+=grupos(sec().productos).map(g=>`<h3>${esc(g.k)}</h3><div class="card">`+g.ps.map(p=>`<div class="row"><span class="grow">${esc(p.nombre)}</span><span class="s">${p.precio?eur(p.precio):'Gratuita'}</span><button class="x" data-del="${p.id}" aria-label="Quitar ${esc(p.nombre)}">Quitar</button></div>`).join('')+'</div>').join('');
+  h+=`<h3>Copia de seguridad</h3><p class="small">Todo se guarda en este móvil, sin internet. Si borras los datos del navegador se pierde, así que de vez en cuando guarda una copia.</p>
+    <div class="exp" style="margin-top:10px"><button class="btn" data-act="backup">Guardar copia</button><button class="btn" data-act="restore">Recuperar copia</button></div>`;
+  el.innerHTML=h;
+}
+
+/* ================= eventos ================= */
+document.addEventListener('click',e=>{
+  const b=e.target.closest('button'); if(!b) return;
+  if(b.dataset.p){ D.pagina=b.dataset.p; UI.filtro='Todo'; UI.confirmar=false; UI.contado=''; save(); render(); window.scrollTo(0,0); return; }
+  if(b.dataset.m){ D.metodo=b.dataset.m; save(); render(); return; }
+  if(b.dataset.f){ UI.filtro=b.dataset.f; render(); return; }
+  if(b.dataset.v){ UI.view=b.dataset.v; UI.confirmar=false; render(); window.scrollTo(0,0); return; }
+  if(b.dataset.add) return sumar(b.dataset.add,1);
+  if(b.dataset.sub) return sumar(b.dataset.sub,-1);
+  if(b.dataset.del){ const s=sec(); s.productos=s.productos.filter(p=>p.id!==b.dataset.del); delete s.counts.ef[b.dataset.del]; delete s.counts.tj[b.dataset.del]; save(); render(); return; }
+  if(b.dataset.exp){ const k=b.dataset.k; const c=k==='actual'?cierreActual():sec().cierres[+k]; if(c) exportar(b.dataset.exp,c); return; }
+  const a=b.dataset.act;
+  if(a==='confirmar'){UI.confirmar=true;render();}
+  if(a==='cancelar'){UI.confirmar=false;render();}
+  if(a==='cerrar') cerrarCaja();
+  if(a==='backup') descargar('santa-espina_copia_'+stamp(Date.now())+'.json',new TextEncoder().encode(JSON.stringify(D)),'application/json');
+  if(a==='restore') document.getElementById('fImport').click();
+});
+document.getElementById('fImport').addEventListener('change',e=>{
+  const f=e.target.files&&e.target.files[0]; if(!f) return;
+  const rd=new FileReader();
+  rd.onload=()=>{ try{ const x=JSON.parse(rd.result); if(!x||!x.sec||!x.sec.ent||!x.sec.tie) throw 0; D=x; save(); render(); toast('Copia recuperada'); }catch(err){ toast('Ese archivo no es una copia de esta app'); } e.target.value=''; };
+  rd.readAsText(f);
+});
+document.addEventListener('input',e=>{
+  if(e.target.id==='contado'){ UI.contado=e.target.value; document.getElementById('diffBox').innerHTML=cuadre(totales()); }
+});
+document.addEventListener('submit',e=>{
+  if(e.target.id!=='fAdd') return; e.preventDefault();
+  const n=document.getElementById('pNombre').value.trim(), p=parseFloat(document.getElementById('pPrecio').value.replace(',','.')), cat=document.getElementById('pCat').value;
+  if(!n||isNaN(p)||p<0){toast('Escribe un nombre y un precio válido (0 si es gratuita)');return;}
+  sec().productos.push({id:uid(),nombre:n,precio:r2(p),cat}); save(); render(); toast('Añadido: '+n);
+});
+let tt; function toast(m){const t=document.getElementById('toast');t.textContent=m;t.hidden=false;clearTimeout(tt);tt=setTimeout(()=>t.hidden=true,2600);}
+
+save(); render();
+try{ if(navigator.storage&&navigator.storage.persist) navigator.storage.persist(); }catch(e){}
+if('serviceWorker' in navigator && location.protocol.startsWith('http')){
+  window.addEventListener('load',()=>navigator.serviceWorker.register('sw.js').catch(()=>{}));
+}
+</script>
+</body>
+</html>
