@@ -917,7 +917,18 @@ document.addEventListener('submit',e=>{
 });
 let tt; function toast(m){const t=document.getElementById('toast');t.textContent=m;t.hidden=false;clearTimeout(tt);tt=setTimeout(()=>t.hidden=true,2600);}
 
+(function conectarDesdeEnlace(){
+  try{
+    const q=new URLSearchParams(location.search), c=q.get('conectar'); if(!c) return;
+    const b=c.replace(/-/g,'+').replace(/_/g,'/'), j=JSON.parse(decodeURIComponent(escape(atob(b+'==='.slice((b.length+3)%4)))));
+    if(!j.u||!j.k) return;
+    D.envio.url=j.u; D.envio.clave=j.k;
+    history.replaceState(null,'',location.pathname);
+    UI.home=false; UI.view='Carta'; UI.conectado=true;
+  }catch(e){}
+})();
 save(); render(); setTimeout(enviarCola,1500);
+if(UI.conectado){ setTimeout(()=>{ toast('Envío automático configurado. Escribe el nombre de este móvil.'); const i=document.getElementById('env_movil'); if(i){ i.scrollIntoView({block:'center'}); i.focus(); } },400); }
 try{ if(navigator.storage&&navigator.storage.persist) navigator.storage.persist(); }catch(e){}
 if('serviceWorker' in navigator && location.protocol.startsWith('http')){
   window.addEventListener('load',()=>navigator.serviceWorker.register('sw.js').catch(()=>{}));
