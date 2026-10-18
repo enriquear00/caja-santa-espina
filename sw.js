@@ -1,6 +1,6 @@
 // Guarda la app en el móvil para que funcione sin internet.
 // Si cambias algún archivo, sube también este con la versión cambiada (v2, v3...).
-const VERSION = 'caja-santa-espina-v2';
+const VERSION = 'caja-santa-espina-v3';
 const ARCHIVOS = ['./', './index.html', './manifest.webmanifest', './icon-192.png', './icon-512.png', './icon-maskable-512.png', './apple-touch-icon.png'];
 
 self.addEventListener('install', e => {

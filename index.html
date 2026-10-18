@@ -24,6 +24,9 @@
   --bg:#151213; --surface:#1f1a1c; --ink:#efeaeb; --muted:#a39a9d; --line:#332c2f;
   --accent:#e08597; --accent-ink:#2a0d14; --accent-soft:#3b2128; --warn:#e58566; --ok:#6cc79c;
   --card:#86abe6; --card-ink:#0d1a2c; --card-soft:#1e2b3f; --gold:#d6b866; color-scheme:dark}}
+body.s-tie{--accent:#3d6b3a;--accent-ink:#ffffff;--accent-soft:#e1ecdc}
+body.s-bar{--accent:#8a4b1f;--accent-ink:#ffffff;--accent-soft:#f4e5d6}
+@media (prefers-color-scheme:dark){body.s-tie{--accent:#93c48c;--accent-ink:#0f200e;--accent-soft:#1f3320}body.s-bar{--accent:#e3a46f;--accent-ink:#2a1405;--accent-soft:#3a2617}}
 *{box-sizing:border-box}
 html,body{height:100%;margin:0}
 body{background:var(--bg);color:var(--ink);font-family:var(--body);font-size:15px;-webkit-tap-highlight-color:transparent;padding-top:env(safe-area-inset-top,0px)}
@@ -33,6 +36,33 @@ body{background:var(--bg);color:var(--ink);font-family:var(--body);font-size:15p
 header{position:sticky;top:0;z-index:5;background:var(--bg);padding-block:10px 10px;border-bottom:1px solid var(--line);display:flex;flex-direction:column;gap:10px}
 .brand{font-family:var(--display);font-variant:small-caps;font-weight:700;font-size:14px;letter-spacing:.1em;color:var(--accent);display:flex;align-items:center;gap:8px}
 .brand svg{width:12px;height:12px;flex:none}
+.secbar{display:flex;align-items:center;gap:10px;border-bottom:3px solid var(--accent);padding-bottom:8px}
+.back{border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:999px;padding:7px 12px 7px 9px;font:600 13px var(--body);cursor:pointer}
+.secname{font:700 20px var(--display);color:var(--accent)}
+#home{min-height:100%;background:var(--bg)}
+.home-in{padding-block:22px 40px;display:flex;flex-direction:column;gap:18px;max-width:600px;margin:0 auto}
+.home-in h1{font:700 26px var(--display);margin:6px 0 0}
+.home-btns{display:flex;flex-direction:column;gap:12px}
+.hb{display:flex;align-items:center;gap:14px;text-align:left;width:100%;border:1px solid var(--line);border-left:8px solid var(--c);background:var(--surface);color:var(--ink);border-radius:16px;padding:18px 16px;font:inherit;cursor:pointer;min-height:96px}
+.hb:active{transform:scale(.98)}
+.hb-ent{--c:#7a2335}.hb-tie{--c:#3d6b3a}.hb-bar{--c:#8a4b1f}
+@media (prefers-color-scheme:dark){.hb-ent{--c:#e08597}.hb-tie{--c:#93c48c}.hb-bar{--c:#e3a46f}}
+.hb-ic{width:48px;height:48px;border-radius:12px;display:grid;place-items:center;color:var(--c);background:var(--bg);flex:none}.hb-ic svg{width:28px;height:28px}
+.hb-t{flex:1;min-width:0;display:flex;flex-direction:column;gap:4px}.hb-t>b{font:700 22px var(--display);color:var(--c)}.hb-t span b{color:var(--ink)}.hb-t span{font-size:13px;color:var(--muted);font-variant-numeric:tabular-nums}
+.hb-go{font-size:28px;color:var(--muted)}
+.home-note{text-align:center}
+.ticket{position:fixed;left:0;right:0;bottom:calc(58px + env(safe-area-inset-bottom,0px));z-index:6;background:var(--surface);border-top:2px solid var(--accent);box-shadow:0 -6px 18px rgba(0,0,0,.08);padding-block:10px;max-width:600px;margin:0 auto;display:flex;flex-direction:column;gap:10px}
+body.con-ticket main{padding-bottom:190px}
+.tk-row{display:flex;align-items:center;gap:8px}
+.tk-l{flex:1;min-width:0;display:flex;flex-direction:column;line-height:1.15}.tk-l b{font-size:22px;font-variant-numeric:tabular-nums}
+.tk-b{border:0;border-radius:10px;padding:11px 12px;font:700 14px var(--body);background:var(--accent);color:var(--accent-ink);cursor:pointer}
+.tk-b.ghost{background:transparent;color:var(--ink);border:1px solid var(--line)}
+.tk-b[disabled]{opacity:.45}
+.tk-cambio{display:flex;flex-direction:column;gap:8px}
+.tk-q{display:flex;gap:6px;flex-wrap:wrap}.tk-q button{flex:1;min-width:56px;border:1px solid var(--line);background:var(--bg);color:var(--ink);border-radius:10px;padding:10px 6px;font:700 15px var(--body);cursor:pointer}
+.tk-cambio input{flex:0 0 120px}
+.tk-dev{font-size:15px}.tk-dev b{font-size:22px;color:var(--ok)}.tk-dev.bad b{color:var(--warn)}
+.semana{padding:12px 14px;display:flex;flex-direction:column;gap:10px}.sem-nav{display:flex;align-items:center;justify-content:space-between;gap:8px}.sem-nav .mini{font-size:16px;padding:6px 14px}
 .pages{display:grid;grid-template-columns:1fr 1fr;gap:0;border-bottom:2px solid var(--line)}
 .pages button{border:0;background:none;padding:10px 4px 9px;font:700 16px var(--body);color:var(--muted);cursor:pointer;border-bottom:3px solid transparent;margin-bottom:-2px}
 .pages button[aria-pressed="true"]{color:var(--accent);border-bottom-color:var(--accent)}
@@ -131,13 +161,11 @@ input,select{font:inherit;font-size:16px;padding:12px;border-radius:10px;border:
 </style>
 </head>
 <body>
-<div class="app">
+<div id="home" hidden></div>
+<div class="app" id="appSec">
   <header class="pad">
     <div class="brand"><svg viewBox="0 0 12 12" aria-hidden="true"><path d="M5 0h2v4h4v2H7v6H5V6H1V4h4z" fill="currentColor"/></svg>Monasterio La Santa Espina</div>
-    <div class="pages" role="group" aria-label="Página">
-      <button data-p="ent" aria-pressed="true">Entradas</button>
-      <button data-p="tie" aria-pressed="false">Tienda</button>
-    </div>
+    <div class="secbar"><button class="back" data-home="1" aria-label="Volver al inicio">‹ Inicio</button><span class="secname" id="secName">Entradas</span></div>
     <div class="top">
       <div><div class="lbl" id="hLbl">Vendido en este turno</div><div class="total" id="hTotal">0,00 €</div></div>
       <div class="split">
@@ -158,6 +186,7 @@ input,select{font:inherit;font-size:16px;padding:12px;border-radius:10px;border:
     <section id="vCarta" hidden></section>
     <section id="vVisitas" hidden></section>
   </main>
+  <div id="ticket" class="ticket pad" hidden></div>
   <nav class="pad"><div class="in" role="tablist">
     <button role="tab" data-v="Vender" aria-selected="true">Vender</button>
     <button role="tab" data-v="Caja" aria-selected="false">Caja</button>
@@ -186,7 +215,8 @@ const DEF = {
     ['Miel','Miel de encina 750 g',11],['Miel','Miel de encina 500 g',7],['Miel','Pack miel 2 × 500 g',12.5],['Miel','Pack miel 3 × 500 g',18],
     ['Queso','Queso oveja leche cruda semicurado (cuña)',14],['Queso','Queso oveja leche cruda curado (cuña)',14],['Queso','Queso oveja leche cruda semicurado (entero)',23],
     ['Vino','Convento Las Claras blanco verdejo',10],['Vino','Convento Las Claras tinto roble',14],['Vino','Convento Las Claras tinto crianza',20],
-    ['Vino','Pack CLC: 2 verdejos + 1 roble',30],['Vino','Pack CLC: 2 robles + 1 verdejo',32],['Vino','Pack CLC: verdejo, roble y crianza',39],['Vino','Pack CLC: roble, crianza y reserva',59]]}
+    ['Vino','Pack CLC: 2 verdejos + 1 roble',30],['Vino','Pack CLC: 2 robles + 1 verdejo',32],['Vino','Pack CLC: verdejo, roble y crianza',39],['Vino','Pack CLC: roble, crianza y reserva',59]]},
+  bar:{nombre:'Bar', cats:["Cafés e infusiones", "Bebidas", "Comida y snacks", "Helados", "Otros"], productos:[["Cafés e infusiones", "Café solo", 1.5], ["Cafés e infusiones", "Café cortado", 1.7], ["Cafés e infusiones", "Café con leche", 2], ["Cafés e infusiones", "Café americano", 1.5], ["Cafés e infusiones", "Descafeinado sobre", 2], ["Cafés e infusiones", "Infusión", 2], ["Bebidas", "Refresco", 1.5], ["Bebidas", "Cerveza", 2], ["Bebidas", "Cerveza sin alcohol", 2], ["Comida y snacks", "Patatas Pringles", 1.8], ["Comida y snacks", "Cortezas (tarrina)", 0.8], ["Comida y snacks", "Frutos secos (tarrina)", 0.5], ["Comida y snacks", "Minipizza", 2.5], ["Comida y snacks", "Panini", 2.5], ["Helados", "Calippo Lima-Limón", 2], ["Helados", "Super Twister", 2.2], ["Helados", "Frigurón", 1.3], ["Helados", "Frigo Chuches", 2], ["Helados", "Cornetto XXL Nata", 3], ["Helados", "Cornetto Choc 'N' Ball", 3], ["Helados", "Volcanix", 2.5], ["Helados", "Sándwich Galleta Dinosaurus", 2.9], ["Helados", "Sándwich Filipinos Blanco", 2.9], ["Helados", "Magnum Bar Caramel & Nuts", 2.4], ["Helados", "Magnum La Pistache", 3.2], ["Helados", "Magnum Almond", 3.2], ["Helados", "Magnum Blanco", 3.2], ["Helados", "Magnum Double Chocolate", 3.2], ["Helados", "Cornetto Max Pistachio", 2.6], ["Helados", "Cornetto Nata", 1.7]]}
 };
 
 /* ================= utilidades ================= */
@@ -204,11 +234,11 @@ const KEY='santaespina_caja_v1';
 function nuevaSec(k){ return {productos:DEF[k].productos.map(([cat,nombre,precio])=>({id:uid(),cat,nombre,precio})),counts:{ef:{},tj:{}},inicio:Date.now(),cierres:[]}; }
 let D;
 try{ D=JSON.parse(localStorage.getItem(KEY)||'null'); }catch(e){ D=null; }
-if(!D||!D.sec){ D={sec:{ent:nuevaSec('ent'),tie:nuevaSec('tie')},pagina:'ent',metodo:'ef'}; }
-['ent','tie'].forEach(k=>{ if(!D.sec[k]) D.sec[k]=nuevaSec(k); const s=D.sec[k]; s.counts=s.counts||{ef:{},tj:{}}; s.counts.ef=s.counts.ef||{}; s.counts.tj=s.counts.tj||{}; s.cierres=s.cierres||[]; }); D.sec.ent.visitas=D.sec.ent.visitas||[];
+if(!D||!D.sec){ D={sec:{ent:nuevaSec('ent'),tie:nuevaSec('tie'),bar:nuevaSec('bar')},pagina:'ent',metodo:'ef'}; }
+['ent','tie','bar'].forEach(k=>{ if(!D.sec[k]) D.sec[k]=nuevaSec(k); const s=D.sec[k]; s.counts=s.counts||{ef:{},tj:{}}; s.counts.ef=s.counts.ef||{}; s.counts.tj=s.counts.tj||{}; s.cierres=s.cierres||[]; }); D.sec.ent.visitas=D.sec.ent.visitas||[];
 let guardadoOK=true;
 function save(){ try{ localStorage.setItem(KEY,JSON.stringify(D)); guardadoOK=true; }catch(e){ if(guardadoOK) toast('No se puede guardar en este navegador. Haz copias de seguridad.'); guardadoOK=false; } }
-const UI={view:'Vender',filtro:'Todo',confirmar:false,contado:'',borrarV:null};
+const UI={view:'Vender',filtro:'Todo',confirmar:false,contado:'',borrarV:null,home:true};
 const sec = () => D.sec[D.pagina];
 const cats = () => DEF[D.pagina].cats;
 const catOrd = c => { const i=cats().indexOf(c); return i<0?99:i; };
@@ -233,6 +263,7 @@ function sumar(id,d){
   if(d<0 && !cnt(m,id)) m = m==='ef'?'tj':'ef';
   const n=cnt(m,id)+d;
   if(n<=0) delete s.counts[m][id]; else s.counts[m][id]=n;
+  if(D.pagina==='bar'){ const q=(UI.ticket[id]||0)+d; if(q>0) UI.ticket[id]=q; else delete UI.ticket[id]; if(!Object.keys(UI.ticket).length) UI.cambio=false; }
   save(); render();
 }
 function cierreActual(){
@@ -243,7 +274,7 @@ function cierreActual(){
 function cerrarCaja(){
   const c=cierreActual(), s=sec();
   s.cierres.unshift(c); s.cierres=s.cierres.slice(0,200);
-  s.counts={ef:{},tj:{}}; if(D.pagina==='ent') s.visitas=[]; s.inicio=Date.now(); UI.confirmar=false; UI.contado='';
+  s.counts={ef:{},tj:{}}; if(D.pagina==='ent') s.visitas=[]; if(D.pagina==='bar'){ UI.ticket={}; UI.cambio=false; UI.entrega=''; } s.inicio=Date.now(); UI.confirmar=false; UI.contado='';
   save(); render(); toast('Caja cerrada: '+eur(c.total));
 }
 
@@ -299,12 +330,12 @@ function makePDF(){
   return api;
 }
 function pdfDe(c){
-  const P=makePDF(), W=P.W, H=P.H, M=40, wine=[122,35,53], grey=[111,103,106], esEnt=c.pagina==='ent';
+  const P=makePDF(), W=P.W, H=P.H, M=40, wine=COLPDF[c.pagina]||[122,35,53], grey=[111,103,106], esEnt=c.pagina==='ent';
   const R=resumen(c.lineas||[]);
   const cab=()=>{ P.page();
     P.rect(M,38,3,34,wine);
     P.text(M+12,54,'Monasterio La Santa Espina',{size:16,bold:true});
-    P.text(M+12,70,'Cierre de caja · '+(esEnt?'Venta de entradas':'Tienda'),{size:10,color:grey});
+    P.text(M+12,70,'Cierre de caja · '+(TIT[c.pagina]||''),{size:10,color:grey});
     P.text(W-M,52,'Desde '+fmtF(c.inicio),{size:9,color:grey,align:'right'});
     P.text(W-M,66,'Hasta '+fmtF(c.fecha),{size:9,color:grey,align:'right'}); };
   const X={pvp:330,ef:385,tj:435,uds:480,imp:W-M};
@@ -388,7 +419,7 @@ function xlsxDe(c){
   // estilos: 0 normal, 1 negrita, 2 moneda, 3 negrita moneda, 4 título, 5 cabecera, 6 sección, 7 gris
   const S=(r,col,v,s,f)=>{ (rows[r]=rows[r]||[]).push({col,v,s:s||0,f}); };
   S(1,'A','Monasterio La Santa Espina',4);
-  S(2,'A','Cierre de caja · '+(esEnt?'Venta de entradas':'Tienda'),7);
+  S(2,'A','Cierre de caja · '+(TIT[c.pagina]||''),7);
   S(3,'A','Desde',1); S(3,'B',fmtF(c.inicio));
   S(4,'A','Hasta',1); S(4,'B',fmtF(c.fecha));
   const H=['Sección','Artículo','PVP','Uds efectivo','Uds tarjeta','Unidades','Importe efectivo','Importe tarjeta','Importe'];
@@ -405,12 +436,12 @@ function xlsxDe(c){
   if(c.contado!=null){ S(r,'A','Efectivo contado en caja',1); S(r,'C',c.contado,2); r++;
     S(r,'A','Diferencia (contado − ventas en efectivo)',1); S(r,'C',r2(c.contado-R.tEf),3,`C${r-1}-G${tr}`); r++; }
   const cols='<col min="1" max="1" width="13" customWidth="1"/><col min="2" max="2" width="46" customWidth="1"/><col min="3" max="3" width="11" customWidth="1"/><col min="4" max="6" width="12" customWidth="1"/><col min="7" max="8" width="16" customWidth="1"/><col min="9" max="9" width="13" customWidth="1"/>';
-  const hojas=[{nombre:esEnt?'Entradas':'Tienda',xml:hojaXML(rows,{cols,merge:'A1:I1',freeze:6})}];
+  const hojas=[{nombre:NOMSEC[c.pagina]||'Caja',xml:hojaXML(rows,{cols,merge:'A1:I1',freeze:6})}];
   if(esEnt&&c.visitas&&c.visitas.length) hojas.push(...hojasEncuesta(c.visitas,'Cierre del '+fmtF(c.fecha)));
   return libroXLSX(hojas);
 }
 function exportar(tipo,c){
-  const base=`santa-espina_${c.pagina==='ent'?'entradas':'tienda'}_${stamp(c.fecha)}`;
+  const base=`santa-espina_${({ent:'entradas',tie:'tienda',bar:'bar'})[c.pagina]||'caja'}_${stamp(c.fecha)}`;
   try{
     if(tipo==='pdf') descargar(base+'.pdf',pdfDe(c),'application/pdf');
     else descargar(base+'.xlsx',xlsxDe(c),'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
@@ -601,16 +632,106 @@ function descargarEncuesta(){
   catch(e){ toast('No se pudo crear el archivo'); }
 }
 
+/* ================= inicio, bar, cambio y Excel semanal ================= */
+const TIT={ent:'Venta de entradas',tie:'Tienda',bar:'Bar'};
+const NOMSEC={ent:'Entradas',tie:'Tienda',bar:'Bar'};
+const COLPDF={ent:[122,35,53],tie:[61,107,58],bar:[138,75,31]};
+function abrirSeccion(k){ D.pagina=k; UI.home=false; UI.view='Vender'; UI.filtro='Todo'; UI.confirmar=false; UI.contado=''; UI.cambio=false; save(); render(); window.scrollTo(0,0); }
+function renderHome(){
+  const el=document.getElementById('home');
+  const sub=k=>{ const s=D.sec[k], l=s.productos.filter(p=>(s.counts.ef[p.id]||0)+(s.counts.tj[p.id]||0)).map(p=>({precio:p.precio,ef:s.counts.ef[p.id]||0,tj:s.counts.tj[p.id]||0,cant:(s.counts.ef[p.id]||0)+(s.counts.tj[p.id]||0)}));
+    const R=resumen(l); return R.uds?`Turno abierto: <b>${eur(R.total)}</b> · ${R.uds} ${k==='ent'?(R.uds===1?'entrada':'entradas'):k==='bar'?(R.uds===1?'consumición':'consumiciones'):(R.uds===1?'artículo':'artículos')}`:'Sin ventas en este turno'; };
+  const ico={ent:'<path d="M3 7h18v3a2 2 0 0 0 0 4v3H3v-3a2 2 0 0 0 0-4z"/><path d="M14 7v10" stroke-dasharray="2 2"/>',
+    tie:'<path d="M5 8h14l-1 12H6z"/><path d="M9 8a3 3 0 0 1 6 0"/>',
+    bar:'<path d="M5 9h11v5a5 5 0 0 1-5 5h-1a5 5 0 0 1-5-5z"/><path d="M16 10h1.5a2.5 2.5 0 0 1 0 5H16"/><path d="M8 3c0 1.5 1 1.5 1 3M11 3c0 1.5 1 1.5 1 3"/>'};
+  el.innerHTML=`<div class="home-in pad">
+    <div class="brand"><svg viewBox="0 0 12 12" aria-hidden="true"><path d="M5 0h2v4h4v2H7v6H5V6H1V4h4z" fill="currentColor"/></svg>Monasterio La Santa Espina</div>
+    <h1>¿Qué caja vas a llevar?</h1>
+    <div class="home-btns">${['ent','tie','bar'].map(k=>`<button class="hb hb-${k}" data-open="${k}"><span class="hb-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${ico[k]}</svg></span><span class="hb-t"><b>${NOMSEC[k]}</b><span>${sub(k)}</span></span><span class="hb-go" aria-hidden="true">›</span></button>`).join('')}</div>
+    <p class="small home-note">Cada caja es independiente: sus ventas, cierres y tarifas no se mezclan.</p>
+  </div>`;
+}
+/* --- pedido actual y calculadora de cambio (solo bar) --- */
+UI.ticket=UI.ticket||{}; UI.cambio=false; UI.entrega='';
+function ticketInfo(){ const s=D.sec.bar; let tot=0,n=0; for(const [id,q] of Object.entries(UI.ticket)){ const p=s.productos.find(x=>x.id===id); if(p&&q>0){tot+=p.precio*q;n+=q;} } return {tot:r2(tot),n}; }
+function renderTicket(){
+  const el=document.getElementById('ticket'), on=!UI.home&&D.pagina==='bar'&&UI.view==='Vender';
+  el.hidden=!on; document.body.classList.toggle('con-ticket',on); if(!on) return;
+  const {tot,n}=ticketInfo(), ent=parseFloat(String(UI.entrega).replace(',','.'));
+  let h=`<div class="tk-row"><span class="tk-l"><span class="lbl">Pedido actual</span><b>${eur(tot)}</b><span class="small">${n} ${n===1?'consumición':'consumiciones'}</span></span>
+    <button class="tk-b" data-act="cambio" ${n?'':'disabled'} aria-pressed="${UI.cambio}">Cambio</button><button class="tk-b ghost" data-act="nuevoPed" ${n?'':'disabled'}>Nuevo pedido</button></div>`;
+  if(UI.cambio&&n){
+    const quick=[...new Set([Math.ceil(tot),5,10,20,50].filter(v=>v>=tot))].sort((a,b)=>a-b).slice(0,5);
+    let res='<span class="small">Escribe con cuánto paga o toca un billete.</span>';
+    if(UI.entrega!==''&&!isNaN(ent)){ const d=r2(ent-tot); res=d>=0?`<span class="tk-dev">Devolver <b>${eur(d)}</b></span>`:`<span class="tk-dev bad">Faltan <b>${eur(-d)}</b></span>`; }
+    h+=`<div class="tk-cambio"><div class="tk-q"><button data-ent="${tot}">Justo</button>${quick.filter(v=>v!==tot).map(v=>`<button data-ent="${v}">${v} €</button>`).join('')}</div>
+      <div class="tk-row"><input id="entrega" inputmode="decimal" placeholder="Entrega €" value="${esc(UI.entrega)}" aria-label="Con cuánto paga"><span id="tkRes">${res}</span></div>
+      <button class="btn" data-act="cobrado">Cobrado · nuevo pedido</button></div>`;
+  }
+  el.innerHTML=h;
+}
+function resCambio(){
+  const {tot}=ticketInfo(), ent=parseFloat(String(UI.entrega).replace(',','.')), box=document.getElementById('tkRes'); if(!box) return;
+  if(UI.entrega===''||isNaN(ent)){ box.innerHTML='<span class="small">Escribe con cuánto paga o toca un billete.</span>'; return; }
+  const d=r2(ent-tot); box.innerHTML=d>=0?`<span class="tk-dev">Devolver <b>${eur(d)}</b></span>`:`<span class="tk-dev bad">Faltan <b>${eur(-d)}</b></span>`;
+}
+/* --- Excel semanal del bar --- */
+UI.semana=0;
+function lunes(off){ const d=new Date(); d.setHours(0,0,0,0); const dw=(d.getDay()+6)%7; d.setDate(d.getDate()-dw+7*off); return d; }
+function cierresSemana(off){ const a=lunes(off).getTime(), b=a+7*864e5; return D.sec.bar.cierres.filter(c=>c.fecha>=a&&c.fecha<b).sort((x,y)=>x.fecha-y.fecha); }
+function etiquetaSemana(off){ const a=lunes(off), b=new Date(a.getTime()+6*864e5), f=d=>d.toLocaleDateString('es-ES',{day:'numeric',month:'short'}); return `${f(a)} – ${f(b)}`; }
+function bloqueSemana(){
+  const L=cierresSemana(UI.semana), tot=r2(L.reduce((a,c)=>a+c.total,0)), ef=r2(L.reduce((a,c)=>a+c.efectivo,0)), tj=r2(L.reduce((a,c)=>a+c.tarjeta,0));
+  const share=!!(navigator.canShare&&window.File&&navigator.canShare({files:[new File(['x'],'a.xlsx',{type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'})]}));
+  return `<h3>Excel de la semana</h3>
+  <div class="card semana"><div class="sem-nav"><button class="mini" data-sem="-1" aria-label="Semana anterior">‹</button><b>${etiquetaSemana(UI.semana)}</b><button class="mini" data-sem="1" ${UI.semana>=0?'disabled':''} aria-label="Semana siguiente">›</button></div>
+  <p class="small">${L.length?`${L.length} ${L.length===1?'turno cerrado':'turnos cerrados'} · <b>${eur(tot)}</b> (efectivo ${eur(ef)} · tarjeta ${eur(tj)})`:'No hay turnos cerrados esta semana.'} Solo cuentan los turnos ya cerrados.</p>
+  <div class="exp"${share?'':' style="grid-template-columns:1fr"'}><button class="btn" data-act="semX" ${L.length?'':'disabled'}><span class="ext xl">XLSX</span>Descargar</button>${share?`<button class="btn" data-act="semShare" ${L.length?'':'disabled'}>Enviar…</button>`:''}</div></div>`;
+}
+function xlsxSemana(off){
+  const L=cierresSemana(off), a=lunes(off), b=new Date(a.getTime()+6*864e5), f=d=>d.toLocaleDateString('es-ES');
+  const rows=[], S=(r,col,v,s,fo)=>{(rows[r]=rows[r]||[]).push({col,v,s:s||0,f:fo});};
+  S(1,'A','Monasterio La Santa Espina · Caja del bar',4); S(2,'A',`Semana del ${f(a)} al ${f(b)}`,7);
+  ['Fecha','Apertura','Cierre','Efectivo','Tarjeta','Total','Efectivo contado','Diferencia','Consumiciones'].forEach((h,i)=>S(4,'ABCDEFGHI'[i],h,5));
+  L.forEach((c,i)=>{ const r=5+i, x=serialXL(c.fecha), y=serialXL(c.inicio);
+    S(r,'A',Math.floor(x),8); S(r,'B',y-Math.floor(y),9); S(r,'C',x-Math.floor(x),9); S(r,'D',c.efectivo,2); S(r,'E',c.tarjeta,2); S(r,'F',c.total,2,`D${r}+E${r}`);
+    if(c.contado!=null){ S(r,'G',c.contado,2); S(r,'H',r2(c.contado-c.efectivo),2,`G${r}-D${r}`); } S(r,'I',c.unidades||0); });
+  const last=4+L.length, tr=last+1, sm=(col,v,s)=>S(tr,col,v,s,L.length?`SUM(${col}5:${col}${last})`:null);
+  S(tr,'A','TOTAL SEMANA',1); sm('D',r2(L.reduce((a,c)=>a+c.efectivo,0)),3); sm('E',r2(L.reduce((a,c)=>a+c.tarjeta,0)),3); sm('F',r2(L.reduce((a,c)=>a+c.total,0)),3); sm('I',L.reduce((a,c)=>a+(c.unidades||0),0),1);
+  const cols1='<col min="1" max="1" width="12" customWidth="1"/><col min="2" max="3" width="10" customWidth="1"/><col min="4" max="8" width="15" customWidth="1"/><col min="9" max="9" width="15" customWidth="1"/>';
+  // productos de la semana
+  const m=new Map(); L.forEach(c=>(c.lineas||[]).forEach(x=>{ const k=x.cat+'|'+x.nombre+'|'+x.precio; const o=m.get(k)||{cat:x.cat,nombre:x.nombre,precio:x.precio,ef:0,tj:0}; o.ef+=x.ef; o.tj+=x.tj; m.set(k,o); }));
+  const cOrd=c=>{const i=DEF.bar.cats.indexOf(c);return i<0?99:i;};
+  const P=[...m.values()].sort((a,b)=>cOrd(a.cat)-cOrd(b.cat)||a.nombre.localeCompare(b.nombre,'es'));
+  const r2s=[], T=(r,col,v,s,fo)=>{(r2s[r]=r2s[r]||[]).push({col,v,s:s||0,f:fo});};
+  T(1,'A','Productos vendidos en la semana',4); T(2,'A',`Del ${f(a)} al ${f(b)}`,7);
+  ['Sección','Producto','PVP','Uds efectivo','Uds tarjeta','Unidades','Importe'].forEach((h,i)=>T(4,'ABCDEFG'[i],h,5));
+  P.forEach((x,i)=>{ const r=5+i; T(r,'A',x.cat,6); T(r,'B',x.nombre); T(r,'C',x.precio,2); T(r,'D',x.ef); T(r,'E',x.tj); T(r,'F',x.ef+x.tj,0,`D${r}+E${r}`); T(r,'G',r2(x.precio*(x.ef+x.tj)),2,`C${r}*F${r}`); });
+  const pl=4+P.length, pt=pl+1;
+  T(pt,'A','TOTAL',1); if(P.length){ T(pt,'F',P.reduce((a,x)=>a+x.ef+x.tj,0),1,`SUM(F5:F${pl})`); T(pt,'G',r2(P.reduce((a,x)=>a+x.precio*(x.ef+x.tj),0)),3,`SUM(G5:G${pl})`); }
+  const cols2='<col min="1" max="1" width="18" customWidth="1"/><col min="2" max="2" width="34" customWidth="1"/><col min="3" max="7" width="12" customWidth="1"/>';
+  const nombre=`caja-bar_semana_${stamp(a.getTime()).slice(0,10)}_a_${stamp(b.getTime()).slice(0,10)}.xlsx`;
+  return {nombre,bytes:libroXLSX([{nombre:'Semana',xml:hojaXML(rows,{cols:cols1,merge:'A1:I1',freeze:4})},{nombre:'Productos',xml:hojaXML(r2s,{cols:cols2,freeze:4})}])};
+}
+async function compartirSemana(){
+  try{ const {nombre,bytes}=xlsxSemana(UI.semana); const file=new File([bytes],nombre,{type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'});
+    await navigator.share({files:[file],title:'Caja del bar · '+etiquetaSemana(UI.semana),text:'Caja semanal del bar de La Santa Espina ('+etiquetaSemana(UI.semana)+').'}); }
+  catch(e){ if(!e||e.name!=='AbortError') toast('No se pudo compartir; usa Descargar'); }
+}
+
 /* ================= vistas ================= */
 function grupos(ps){ const g=[]; ps.forEach(p=>{const k=p.cat||'Otros'; let x=g.find(y=>y.k===k); if(!x){x={k,ps:[]};g.push(x);} x.ps.push(p);}); return g.sort((a,b)=>catOrd(a.k)-catOrd(b.k)); }
 function render(){
-  const t=totales(), esEnt=D.pagina==='ent';
-  document.querySelectorAll('.pages button').forEach(b=>b.setAttribute('aria-pressed',b.dataset.p===D.pagina));
-  document.getElementById('hLbl').textContent=esEnt?'Entradas vendidas en este turno':'Tienda: vendido en este turno';
+  document.body.classList.toggle('s-tie',!UI.home&&D.pagina==='tie'); document.body.classList.toggle('s-bar',!UI.home&&D.pagina==='bar');
+  document.getElementById('home').hidden=!UI.home; document.getElementById('appSec').hidden=UI.home;
+  if(UI.home){ renderHome(); renderTicket(); return; }
+  const t=totales(), esEnt=D.pagina==='ent', esBar=D.pagina==='bar';
+  document.getElementById('secName').textContent=NOMSEC[D.pagina];
+  document.getElementById('hLbl').textContent=esEnt?'Entradas vendidas en este turno':esBar?'Bar: vendido en este turno':'Tienda: vendido en este turno';
   document.getElementById('hTotal').textContent=eur(t.total);
   document.getElementById('hEf').textContent=eur(t.tEf);
   document.getElementById('hTj').textContent=eur(t.tTj);
-  document.getElementById('hViL').textContent=esEnt?'Visitantes':'Artículos';
+  document.getElementById('hViL').textContent=esEnt?'Visitantes':esBar?'Consumiciones':'Artículos';
   document.getElementById('hVi').textContent=t.uds;
   const vend=UI.view==='Vender';
   document.getElementById('seg').hidden=!vend;
@@ -628,12 +749,13 @@ function render(){
   if(UI.view==='Caja') renderCaja(t);
   if(UI.view==='Carta') renderCarta();
   if(UI.view==='Visitas') renderVisitas(t);
+  renderTicket();
 }
 function renderVender(){
   const el=document.getElementById('vVender'), m=D.metodo; el.className='m-'+m;
   if(!sec().productos.length){ el.innerHTML='<div class="empty">Aún no hay tarifas.<br>Añádelas en la pestaña <b>Tarifas</b>.</div>'; return; }
   const gs=grupos(sec().productos).filter(g=>UI.filtro==='Todo'||g.k===UI.filtro);
-  el.innerHTML=`<p class="hint">Cobrando en <b>${NOMBRE[m].toLowerCase()}</b>. Toca ${D.pagina==='ent'?'una entrada por cada persona':'un artículo cada vez que lo vendas'}. El botón − quita uno.</p>`+
+  el.innerHTML=`<p class="hint">Cobrando en <b>${NOMBRE[m].toLowerCase()}</b>. Toca ${D.pagina==='ent'?'una entrada por cada persona':D.pagina==='bar'?'cada consumición; abajo ves el pedido y el cambio':'un artículo cada vez que lo vendas'}. El botón − quita uno.</p>`+
     gs.map(g=>`<h3 class="cat">${esc(g.k)}</h3><div class="grid">`+g.ps.map(p=>{
       const c=cnt(m,p.id), any=c||cnt('ef',p.id)+cnt('tj',p.id);
       return `<div class="cell"><button class="tile${c?' on':''}" data-add="${p.id}" aria-label="Sumar ${esc(p.nombre)}">
@@ -657,7 +779,7 @@ function tabla(l,total){
 function renderCaja(t){
   const el=document.getElementById('vCaja'), s=sec(), esEnt=D.pagina==='ent';
   const desde=new Date(s.inicio).toLocaleString('es-ES',{weekday:'short',day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'});
-  let h=`<h2>Caja de ${esEnt?'entradas':'la tienda'}</h2><p class="small" style="margin:-6px 0 12px">Abierta desde ${desde}</p>
+  let h=`<h2>Caja de${esEnt?' entradas':D.pagina==='bar'?'l bar':' la tienda'}</h2><p class="small" style="margin:-6px 0 12px">Abierta desde ${desde}</p>
     <div class="sum"><div><span class="lbl"><span class="dot ef"></span>Efectivo</span><b>${eur(t.tEf)}</b></div>
     <div><span class="lbl"><span class="dot tj"></span>Tarjeta</span><b>${eur(t.tTj)}</b></div>
     <div><span class="lbl"><span class="dot vi"></span>${esEnt?'Visitas':'Artículos'}</span><b>${t.uds}</b></div></div>`;
@@ -668,7 +790,7 @@ function renderCaja(t){
   if(UI.confirmar) h+=`<div class="confirm"><b>¿Cerrar la caja con ${eur(t.total)}?</b><span class="small">${eur(t.tEf)} en efectivo y ${eur(t.tTj)} con tarjeta. ${esEnt&&(s.visitas||[]).length?` La encuesta (${s.visitas.length} grupos) va con el cierre.`:''} Se guarda en el historial y los contadores vuelven a cero.</span>
      <button class="btn danger" data-act="cerrar">Sí, cerrar caja</button><button class="btn ghost" data-act="cancelar">Cancelar</button></div>`;
   else h+=`<button class="btn" data-act="confirmar" ${t.uds?'':'disabled'}>Cerrar caja</button>`;
-  h+='</div><h3>Cierres anteriores</h3>';
+  h+='</div>'+(D.pagina==='bar'?bloqueSemana():'')+'<h3>Cierres anteriores</h3>';
   if(!s.cierres.length) h+='<p class="small">Aquí aparecerá cada caja que cierres, con su PDF y su Excel.</p>';
   else h+='<div class="card">'+s.cierres.slice(0,60).map((x,i)=>{
       const f=new Date(x.fecha).toLocaleString('es-ES',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'});
@@ -679,8 +801,8 @@ function renderCaja(t){
 }
 function renderCarta(){
   const el=document.getElementById('vCarta'), esEnt=D.pagina==='ent';
-  let h=`<h2>Tarifas de ${esEnt?'entradas':'la tienda'}</h2><form class="form" id="fAdd">
-    <div class="field wide"><label class="lbl" for="pNombre">${esEnt?'Tipo de entrada':'Artículo'}</label><input id="pNombre" placeholder="${esEnt?'Ej. Peregrino':'Ej. Rosario de madera'}" required></div>
+  let h=`<h2>Tarifas de${esEnt?' entradas':D.pagina==='bar'?'l bar':' la tienda'}</h2><form class="form" id="fAdd">
+    <div class="field wide"><label class="lbl" for="pNombre">${esEnt?'Tipo de entrada':'Artículo'}</label><input id="pNombre" placeholder="${esEnt?'Ej. Peregrino':D.pagina==='bar'?'Ej. Tostada':'Ej. Rosario de madera'}" required></div>
     <div class="field catf"><label class="lbl" for="pCat">Sección</label><select id="pCat">${cats().map(c=>`<option>${c}</option>`).join('')}</select></div>
     <div class="field price"><label class="lbl" for="pPrecio">Precio €</label><input id="pPrecio" inputmode="decimal" placeholder="0 = gratis" required></div>
     <button class="btn" type="submit">Añadir</button></form>`;
@@ -693,6 +815,10 @@ function renderCarta(){
 /* ================= eventos ================= */
 document.addEventListener('click',e=>{
   const b=e.target.closest('button'); if(!b) return;
+  if(b.dataset.open) return abrirSeccion(b.dataset.open);
+  if(b.dataset.home){ UI.home=true; UI.cambio=false; render(); window.scrollTo(0,0); return; }
+  if(b.dataset.ent!=null){ UI.entrega=String(b.dataset.ent).replace('.',','); renderTicket(); return; }
+  if(b.dataset.sem){ UI.semana=Math.min(0,UI.semana+(+b.dataset.sem)); render(); return; }
   if(b.dataset.p){ D.pagina=b.dataset.p; UI.filtro='Todo'; UI.confirmar=false; UI.contado=''; save(); render(); window.scrollTo(0,0); return; }
   if(b.dataset.m){ D.metodo=b.dataset.m; save(); render(); return; }
   if(b.dataset.f){ UI.filtro=b.dataset.f; render(); return; }
@@ -709,6 +835,10 @@ document.addEventListener('click',e=>{
   if(a==='cancelar'){UI.confirmar=false;render();}
   if(a==='cerrar') cerrarCaja();
   if(a==='guardarV') guardarVisita();
+  if(a==='cambio'){ UI.cambio=!UI.cambio; UI.entrega=''; renderTicket(); if(UI.cambio){ const i=document.getElementById('entrega'); if(i) i.focus(); } }
+  if(a==='nuevoPed'||a==='cobrado'){ UI.ticket={}; UI.cambio=false; UI.entrega=''; renderTicket(); if(a==='cobrado') toast('Cobrado'); }
+  if(a==='semX'){ try{ const x=xlsxSemana(UI.semana); descargar(x.nombre,x.bytes,'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'); }catch(e){ toast('No se pudo crear el archivo'); } }
+  if(a==='semShare') compartirSemana();
   if(a==='encuestaX') descargarEncuesta();
   if(a==='backup') descargar('santa-espina_copia_'+stamp(Date.now())+'.json',new TextEncoder().encode(JSON.stringify(D)),'application/json');
   if(a==='restore') document.getElementById('fImport').click();
@@ -716,10 +846,11 @@ document.addEventListener('click',e=>{
 document.getElementById('fImport').addEventListener('change',e=>{
   const f=e.target.files&&e.target.files[0]; if(!f) return;
   const rd=new FileReader();
-  rd.onload=()=>{ try{ const x=JSON.parse(rd.result); if(!x||!x.sec||!x.sec.ent||!x.sec.tie) throw 0; D=x; save(); render(); toast('Copia recuperada'); }catch(err){ toast('Ese archivo no es una copia de esta app'); } e.target.value=''; };
+  rd.onload=()=>{ try{ const x=JSON.parse(rd.result); if(!x||!x.sec||!x.sec.ent||!x.sec.tie) throw 0; D=x; if(!D.sec.bar) D.sec.bar=nuevaSec('bar'); save(); render(); toast('Copia recuperada'); }catch(err){ toast('Ese archivo no es una copia de esta app'); } e.target.value=''; };
   rd.readAsText(f);
 });
 document.addEventListener('input',e=>{
+  if(e.target.id==='entrega'){ UI.entrega=e.target.value; resCambio(); }
   if(e.target.id==='vEnt'){ UI.fv.entradas=e.target.value; previewEntradas(); }
   if(e.target.id==='vPers'){ UI.fv.personas=e.target.value.replace(/\D/g,''); UI.fv.pTocado=e.target.value!==''; }
   if(e.target.id==='vLug'){ UI.fv.lugar=e.target.value; }
