@@ -135,7 +135,13 @@ h3{font-weight:700;font-size:16px;margin:26px 0 8px}
 button:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 .stack{display:flex;flex-direction:column;gap:10px;margin-top:16px}
 .field{display:flex;flex-direction:column;gap:6px;flex:1;min-width:0}
-input,select{font:inherit;font-size:16px;padding:12px;border-radius:10px;border:1px solid var(--line);background:var(--bg);color:var(--ink);width:100%}
+input,select,textarea{font:inherit;font-size:16px;padding:12px;border-radius:10px;border:1px solid var(--line);background:var(--bg);color:var(--ink);width:100%}
+textarea{min-height:110px;resize:vertical}
+.obs{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:14px 16px}
+.obs summary{font-weight:700;cursor:pointer;list-style:none;display:flex;justify-content:space-between;align-items:center}
+.obs summary::-webkit-details-marker{display:none}
+.obs[open] summary{margin-bottom:12px}
+.obs .field{margin-bottom:10px}
 .form{display:flex;gap:8px;align-items:flex-end;flex-wrap:wrap}
 .form .wide{flex:1 1 100%}
 .form .price{flex:0 0 96px}
@@ -709,6 +715,15 @@ function renderHome(){
     <h1>¿Qué caja vas a llevar?</h1>
     <div class="home-btns">${['ent','tie','bar'].map(k=>`<button class="hb hb-${k}" data-open="${k}"><span class="hb-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${ico[k]}</svg></span><span class="hb-t"><b>${NOMSEC[k]}</b><span>${sub(k)}</span></span><span class="hb-go" aria-hidden="true">›</span></button>`).join('')}</div>
     <p class="small home-note">Cada caja es independiente: sus ventas, cierres y tarifas no se mezclan.</p>
+    <details class="obs" ${UI.obsAbierto?'open':''}><summary>Sugerencias y observaciones <span aria-hidden="true">›</span></summary>
+      <p class="small" style="margin:0 0 12px">¿Algo que cambiar o mejorar en la app, o algún fallo? Escríbelo aquí y le llega por correo a c.pardo@educatioservanda.org.</p>
+      <div class="field"><label class="lbl" for="obsTipo">Tipo</label><select id="obsTipo">${['Cambio o mejora','Algo no funciona','Otra observación'].map(x=>`<option${UI.obs.tipo===x?' selected':''}>${x}</option>`).join('')}</select></div>
+      <div class="field"><label class="lbl" for="obsTxt">Observación</label><textarea id="obsTxt" placeholder="Ej.: Añadir la entrada de peregrino a 3 €">${esc(UI.obs.texto)}</textarea></div>
+      <div class="field"><label class="lbl" for="obsNom">Tu nombre (opcional)</label><input id="obsNom" value="${esc(UI.obs.nombre)}" autocomplete="name"></div>
+      <button class="btn" data-act="obsEnviar">Enviar observación</button>
+      ${D.cola.some(x=>x.obs)?'<p class="small" style="margin-top:8px">Hay observaciones pendientes: se enviarán en cuanto haya internet.</p>':''}
+      ${D.envio.url&&D.envio.clave?'':'<p class="small bad" style="margin-top:8px">Este móvil no tiene configurado el envío (Tarifas › Envío automático).</p>'}
+    </details>
   </div>`;
 }
 /* --- pedido actual y calculadora de cambio (solo bar) --- */
@@ -813,8 +828,8 @@ async function enviarCola(){
   try{
     while(D.cola.length){
       const it=D.cola[0]; let res;
-      try{ res=await postEnvio({id:it.id,cierre:it.cierre}); }catch(e){ break; }
-      if(res&&res.ok){ D.cola.shift(); D.envio.ultimo=Date.now(); save(); }
+      try{ res=await postEnvio(it.obs?{tipo:'observacion',id:it.id,obs:it.obs}:{id:it.id,cierre:it.cierre}); }catch(e){ break; }
+      if(res&&res.ok){ const fue=D.cola.shift(); D.envio.ultimo=Date.now(); save(); if(fue&&fue.obs){ toast('Observación enviada. ¡Gracias!'); if(UI.home) render(); } }
       else { if(res&&res.error==='clave') toast('Envío automático: la clave no es correcta. Revísala en Tarifas.'); break; }
     }
   } finally { enviando=false; if(!UI.home&&UI.view==='Carta') render(); }
@@ -973,6 +988,7 @@ document.addEventListener('click',e=>{
   if(a==='nuevoPed'||a==='cobrado'){ UI.ticket={}; UI.cambio=false; UI.entrega=''; renderTicket(); if(a==='cobrado') toast('Cobrado'); }
   if(a==='semX'){ try{ const x=xlsxSemana(UI.semana); descargar(x.nombre,x.bytes,'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'); }catch(e){ toast('No se pudo crear el archivo'); } }
   if(a==='semShare') compartirSemana();
+  if(a==='obsEnviar') enviarObs();
   if(a==='mesX'){ try{ const x=xlsxMes(UI.mes); descargar(x.nombre,x.bytes,'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'); }catch(e){ toast('No se pudo crear el archivo'); } }
   if(a==='mesShare'){ try{ compartirX(xlsxMes(UI.mes),TIT[D.pagina]+' · '+nomMes(UI.mes)); }catch(e){ toast('No se pudo crear el archivo'); } }
   if(a==='probarEnv') probarEnvio();
@@ -987,7 +1003,17 @@ document.getElementById('fImport').addEventListener('change',e=>{
   rd.onload=()=>{ try{ const x=JSON.parse(rd.result); if(!x||!x.sec||!x.sec.ent||!x.sec.tie) throw 0; D=x; if(!D.sec.bar) D.sec.bar=nuevaSec('bar'); save(); render(); toast('Copia recuperada'); }catch(err){ toast('Ese archivo no es una copia de esta app'); } e.target.value=''; };
   rd.readAsText(f);
 });
+UI.obs={tipo:'Cambio o mejora',texto:'',nombre:''};
+function enviarObs(){
+  const t=UI.obs.texto.trim(); if(!t) return toast('Escribe la observación');
+  if(!D.envio.url||!D.envio.clave) return toast('Este móvil no tiene configurado el envío');
+  D.cola.push({id:uid()+uid(),obs:{app:'Caja',tipo:UI.obs.tipo,texto:t.slice(0,3000),nombre:UI.obs.nombre.trim().slice(0,60),fecha:Date.now()}});
+  UI.obs.texto=''; UI.obsAbierto=false; save(); render();
+  toast(navigator.onLine===false?'Sin internet: se enviará en cuanto haya conexión':'Enviando observación…'); enviarCola();
+}
 document.addEventListener('input',e=>{
+  if(e.target.id==='obsTxt') UI.obs.texto=e.target.value;
+  if(e.target.id==='obsNom') UI.obs.nombre=e.target.value;
   if(e.target.id&&e.target.id.startsWith('env_')){ const k=e.target.id.slice(4); D.envio[k]=e.target.value.trim(); save(); }
   if(e.target.id==='entrega'){ UI.entrega=e.target.value; resCambio(); }
   if(e.target.id==='vEnt'){ UI.fv.entradas=e.target.value; previewEntradas(); }
@@ -995,7 +1021,8 @@ document.addEventListener('input',e=>{
   if(e.target.id==='vLug'){ UI.fv.lugar=e.target.value; }
   if(e.target.id==='contado'){ UI.contado=e.target.value; document.getElementById('diffBox').innerHTML=cuadre(totales()); }
 });
-document.addEventListener('change',e=>{ if(e.target.id==='vLug') UI.fv.lugar=e.target.value; });
+document.addEventListener('change',e=>{ if(e.target.id==='vLug') UI.fv.lugar=e.target.value; if(e.target.id==='obsTipo') UI.obs.tipo=e.target.value; });
+document.addEventListener('toggle',e=>{ if(e.target.classList&&e.target.classList.contains('obs')) UI.obsAbierto=e.target.open; },true);
 document.addEventListener('keydown',e=>{ if(e.key==='Enter'&&(e.target.id==='vEnt'||e.target.id==='vPers')){ e.preventDefault(); const n=document.querySelector('[data-amb]'); if(n) n.focus(); } });
 document.addEventListener('submit',e=>{
   if(e.target.id!=='fAdd') return; e.preventDefault();
