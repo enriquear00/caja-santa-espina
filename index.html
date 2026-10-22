@@ -26,6 +26,8 @@
   --card:#86abe6; --card-ink:#0d1a2c; --card-soft:#1e2b3f; --gold:#d6b866; color-scheme:dark}}
 body.s-tie{--accent:#3d6b3a;--accent-ink:#ffffff;--accent-soft:#e1ecdc}
 body.s-bar{--accent:#8a4b1f;--accent-ink:#ffffff;--accent-soft:#f4e5d6}
+body.s-vy{--accent:#0f8a71;--accent-ink:#ffffff;--accent-soft:#e3f6f1}
+body.s-vy nav{display:none} body.s-vy .split>span:not(#hVyW){display:none}
 @media (prefers-color-scheme:dark){body.s-tie{--accent:#93c48c;--accent-ink:#0f200e;--accent-soft:#1f3320}body.s-bar{--accent:#e3a46f;--accent-ink:#2a1405;--accent-soft:#3a2617}}
 *{box-sizing:border-box}
 html,body{height:100%;margin:0}
@@ -45,8 +47,8 @@ header{position:sticky;top:0;z-index:5;background:var(--bg);padding-block:10px 1
 .home-btns{display:flex;flex-direction:column;gap:12px}
 .hb{display:flex;align-items:center;gap:14px;text-align:left;width:100%;border:1px solid var(--line);border-left:8px solid var(--c);background:var(--surface);color:var(--ink);border-radius:16px;padding:18px 16px;font:inherit;cursor:pointer;min-height:96px}
 .hb:active{transform:scale(.98)}
-.hb-ent{--c:#7a2335}.hb-tie{--c:#3d6b3a}.hb-bar{--c:#8a4b1f}
-@media (prefers-color-scheme:dark){.hb-ent{--c:#e08597}.hb-tie{--c:#93c48c}.hb-bar{--c:#e3a46f}}
+.hb-ent{--c:#7a2335}.hb-tie{--c:#3d6b3a}.hb-bar{--c:#8a4b1f}.hb-vy{--c:#0f8a71}
+@media (prefers-color-scheme:dark){.hb-ent{--c:#e08597}.hb-tie{--c:#93c48c}.hb-bar{--c:#e3a46f}.hb-vy{--c:#5fd3b8}}
 .hb-ic{width:48px;height:48px;border-radius:12px;display:grid;place-items:center;color:var(--c);background:var(--bg);flex:none}.hb-ic svg{width:28px;height:28px}
 .hb-t{flex:1;min-width:0;display:flex;flex-direction:column;gap:4px}.hb-t>b{font:700 22px var(--display);color:var(--c)}.hb-t span b{color:var(--ink)}.hb-t span{font-size:13px;color:var(--muted);font-variant-numeric:tabular-nums}
 .hb-go{font-size:28px;color:var(--muted)}
@@ -277,7 +279,7 @@ function totales(){ const l=lineas(); return {l,...resumen(l)}; }
 /* ================= acciones ================= */
 function sumar(id,d){
   const s=sec(); let m=D.metodo; if(m==='vy'&&D.pagina!=='ent') m='ef';
-  if(d<0 && !cnt(m,id)) m = ['ef','tj','vy'].find(x=>cnt(x,id)) || m;
+  if(d<0 && !cnt(m,id) && m!=='vy') m = ['ef','tj'].find(x=>cnt(x,id)) || m;
   if(d<0 && !cnt(m,id)) return;
   s.counts[m]=s.counts[m]||{};
   const prod=s.productos.find(x=>x.id===id); if(prod) apuntarHora(s,prod.precio,m,d);
@@ -700,21 +702,23 @@ function descargarEncuesta(){
 
 /* ================= inicio, bar, cambio y Excel semanal ================= */
 const TIT={ent:'Venta de entradas',tie:'Tienda',bar:'Bar'};
-const NOMSEC={ent:'Entradas',tie:'Tienda',bar:'Bar'};
+const NOMSEC={ent:'Entradas',tie:'Tienda',bar:'Bar',vy:'Entradas Venteya'};
 const COLPDF={ent:[122,35,53],tie:[61,107,58],bar:[138,75,31]};
-function abrirSeccion(k){ D.pagina=k; UI.home=false; UI.view='Vender'; UI.filtro='Todo'; UI.confirmar=false; UI.contado=''; UI.cambio=false; save(); render(); window.scrollTo(0,0); }
+function abrirSeccion(k){ UI.soloVy=k==='vy'; if(k==='vy'){ k='ent'; D.metodo='vy'; } else if(D.metodo==='vy') D.metodo='ef'; D.pagina=k; UI.home=false; UI.view='Vender'; UI.filtro='Todo'; UI.confirmar=false; UI.contado=''; UI.cambio=false; save(); render(); window.scrollTo(0,0); }
 function renderHome(){
   const el=document.getElementById('home');
-  const sub=k=>{ const s=D.sec[k], l=s.productos.filter(p=>(s.counts.ef[p.id]||0)+(s.counts.tj[p.id]||0)).map(p=>({precio:p.precio,ef:s.counts.ef[p.id]||0,tj:s.counts.tj[p.id]||0,cant:(s.counts.ef[p.id]||0)+(s.counts.tj[p.id]||0)}));
+  const sub=k=>{ if(k==='vy'){ const n=Object.values(D.sec.ent.counts.vy||{}).reduce((a,b)=>a+b,0); return n?`Turno abierto: <b>${n}</b> ${n===1?'entrada':'entradas'} compradas online`:'Compradas online · se apuntan al llegar'; }
+    const s=D.sec[k], l=s.productos.filter(p=>(s.counts.ef[p.id]||0)+(s.counts.tj[p.id]||0)).map(p=>({precio:p.precio,ef:s.counts.ef[p.id]||0,tj:s.counts.tj[p.id]||0,cant:(s.counts.ef[p.id]||0)+(s.counts.tj[p.id]||0)}));
     const R=resumen(l); return R.uds?`Turno abierto: <b>${eur(R.total)}</b> · ${R.uds} ${k==='ent'?(R.uds===1?'entrada':'entradas'):k==='bar'?(R.uds===1?'consumición':'consumiciones'):(R.uds===1?'artículo':'artículos')}`:'Sin ventas en este turno'; };
   const ico={ent:'<path d="M3 7h18v3a2 2 0 0 0 0 4v3H3v-3a2 2 0 0 0 0-4z"/><path d="M14 7v10" stroke-dasharray="2 2"/>',
     tie:'<path d="M5 8h14l-1 12H6z"/><path d="M9 8a3 3 0 0 1 6 0"/>',
-    bar:'<path d="M5 9h11v5a5 5 0 0 1-5 5h-1a5 5 0 0 1-5-5z"/><path d="M16 10h1.5a2.5 2.5 0 0 1 0 5H16"/><path d="M8 3c0 1.5 1 1.5 1 3M11 3c0 1.5 1 1.5 1 3"/>'};
+    bar:'<path d="M5 9h11v5a5 5 0 0 1-5 5h-1a5 5 0 0 1-5-5z"/><path d="M16 10h1.5a2.5 2.5 0 0 1 0 5H16"/><path d="M8 3c0 1.5 1 1.5 1 3M11 3c0 1.5 1 1.5 1 3"/>',
+    vy:'<rect x="5" y="2" width="14" height="20" rx="2.5"/><path d="M8 9h8M8 12h5"/><path d="M9.5 16.5l1.5 1.5 3.5-3.5"/>'};
   el.innerHTML=`<div class="home-in pad">
     <div class="brand"><svg viewBox="0 0 12 12" aria-hidden="true"><path d="M5 0h2v4h4v2H7v6H5V6H1V4h4z" fill="currentColor"/></svg>Monasterio La Santa Espina</div>
     <h1>¿Qué caja vas a llevar?</h1>
-    <div class="home-btns">${['ent','tie','bar'].map(k=>`<button class="hb hb-${k}" data-open="${k}"><span class="hb-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${ico[k]}</svg></span><span class="hb-t"><b>${NOMSEC[k]}</b><span>${sub(k)}</span></span><span class="hb-go" aria-hidden="true">›</span></button>`).join('')}</div>
-    <p class="small home-note">Cada caja es independiente: sus ventas, cierres y tarifas no se mezclan.</p>
+    <div class="home-btns">${['ent','vy','tie','bar'].map(k=>`<button class="hb hb-${k}" data-open="${k}"><span class="hb-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${ico[k]}</svg></span><span class="hb-t"><b>${NOMSEC[k]}</b><span>${sub(k)}</span></span><span class="hb-go" aria-hidden="true">›</span></button>`).join('')}</div>
+    <p class="small home-note">Cada caja es independiente: sus ventas, cierres y tarifas no se mezclan. Las entradas Venteya se cierran junto con la caja de Entradas.</p>
     <details class="obs" ${UI.obsAbierto?'open':''}><summary>Sugerencias y observaciones <span aria-hidden="true">›</span></summary>
       <p class="small" style="margin:0 0 12px">¿Algo que cambiar o mejorar en la app, o algún fallo? Escríbelo aquí y le llega por correo a c.pardo@educatioservanda.org.</p>
       <div class="field"><label class="lbl" for="obsTipo">Tipo</label><select id="obsTipo">${['Cambio o mejora','Algo no funciona','Otra observación'].map(x=>`<option${UI.obs.tipo===x?' selected':''}>${x}</option>`).join('')}</select></div>
@@ -863,22 +867,24 @@ setInterval(enviarCola,60000);
 /* ================= vistas ================= */
 function grupos(ps){ const g=[]; ps.forEach(p=>{const k=p.cat||'Otros'; let x=g.find(y=>y.k===k); if(!x){x={k,ps:[]};g.push(x);} x.ps.push(p);}); return g.sort((a,b)=>catOrd(a.k)-catOrd(b.k)); }
 function render(){
-  document.body.classList.toggle('s-tie',!UI.home&&D.pagina==='tie'); document.body.classList.toggle('s-bar',!UI.home&&D.pagina==='bar');
+  if(UI.home) UI.soloVy=false; if(UI.soloVy){ D.metodo='vy'; UI.view='Vender'; } else if(D.metodo==='vy') D.metodo='ef';
+  document.body.classList.toggle('s-tie',!UI.home&&D.pagina==='tie'); document.body.classList.toggle('s-bar',!UI.home&&D.pagina==='bar'); document.body.classList.toggle('s-vy',!UI.home&&!!UI.soloVy);
   document.getElementById('home').hidden=!UI.home; document.getElementById('appSec').hidden=UI.home;
   if(UI.home){ renderHome(); renderTicket(); return; }
   const t=totales(), esEnt=D.pagina==='ent', esBar=D.pagina==='bar';
-  document.getElementById('secName').textContent=NOMSEC[D.pagina];
+  document.getElementById('secName').textContent=UI.soloVy?'Entradas Venteya':NOMSEC[D.pagina];
   document.getElementById('hLbl').textContent=esEnt?'Entradas vendidas en este turno':esBar?'Bar: vendido en este turno':'Tienda: vendido en este turno';
-  document.getElementById('hTotal').textContent=eur(t.total);
+  document.getElementById('hTotal').textContent=UI.soloVy?`${t.vy} ${t.vy===1?'entrada':'entradas'}`:eur(t.total);
+  if(UI.soloVy) document.getElementById('hLbl').textContent='Entradas Venteya en este turno (compradas online)';
   document.getElementById('hEf').textContent=eur(t.tEf);
   document.getElementById('hTj').textContent=eur(t.tTj);
   document.getElementById('hViL').textContent=esEnt?'Visitantes':esBar?'Consumiciones':'Artículos';
   document.getElementById('hVi').textContent=t.uds+(esEnt?t.vy:0);
   document.getElementById('hVyW').hidden=!(esEnt&&t.vy); document.getElementById('hVy').textContent=t.vy;
   if(!esEnt&&D.metodo==='vy') D.metodo='ef';
-  document.querySelector('#seg [data-m="vy"]').hidden=!esEnt; document.getElementById('seg').classList.toggle('tres',esEnt);
+  document.querySelector('#seg [data-m="vy"]').hidden=true; document.getElementById('seg').classList.remove('tres');
   const vend=UI.view==='Vender';
-  document.getElementById('seg').hidden=!vend;
+  document.getElementById('seg').hidden=!vend||!!UI.soloVy;
   document.querySelectorAll('#seg button').forEach(b=>b.setAttribute('aria-pressed',b.dataset.m===D.metodo));
   document.querySelectorAll('nav button').forEach(b=>b.setAttribute('aria-selected',b.dataset.v===UI.view));
   if(!esEnt&&UI.view==='Visitas') UI.view='Vender';
@@ -899,9 +905,9 @@ function renderVender(){
   const el=document.getElementById('vVender'), m=D.metodo; el.className='m-'+m;
   if(!sec().productos.length){ el.innerHTML='<div class="empty">Aún no hay tarifas.<br>Añádelas en la pestaña <b>Tarifas</b>.</div>'; return; }
   const gs=grupos(sec().productos).filter(g=>UI.filtro==='Todo'||g.k===UI.filtro);
-  el.innerHTML=(m==='vy'?`<p class="vybox"><b>Entradas de Venteya:</b> ya están pagadas online. Toca el tipo de entrada de cada persona que la enseñe; cuentan como visitantes pero no entran en el dinero de la caja.</p>`:'')+`<p class="hint">${m==='vy'?'Apuntando':'Cobrando en'} <b>${NOMBRE[m].toLowerCase()}</b>. Toca ${D.pagina==='ent'?'una entrada por cada persona':D.pagina==='bar'?'cada consumición; abajo ves el pedido y el cambio':'un artículo cada vez que lo vendas'}. El botón − quita uno.</p>`+
+  el.innerHTML=(m==='vy'?`<p class="vybox"><b>Pregunta al llegar si compraron la entrada en la web (Venteya).</b> Si es así, toca aquí su tipo de entrada, una vez por persona. Cuentan como visitantes y van en el cierre de Entradas, pero no se cobran ni entran en el dinero de la caja.</p>`:'')+(m==='vy'?'':`<p class="hint">Cobrando en <b>${NOMBRE[m].toLowerCase()}</b>. Toca ${D.pagina==='ent'?'una entrada por cada persona':D.pagina==='bar'?'cada consumición; abajo ves el pedido y el cambio':'un artículo cada vez que lo vendas'}. El botón − quita uno.</p>`)+
     gs.map(g=>`<h3 class="cat">${esc(g.k)}</h3><div class="grid">`+g.ps.map(p=>{
-      const c=cnt(m,p.id), any=c||cnt('ef',p.id)+cnt('tj',p.id)+cnt('vy',p.id);
+      const c=cnt(m,p.id), any=m==='vy'?c:(c||cnt('ef',p.id)+cnt('tj',p.id));
       return `<div class="cell"><button class="tile${c?' on':''}" data-add="${p.id}" aria-label="Sumar ${esc(p.nombre)}">
         <span class="n">${esc(p.nombre)}</span><span class="p${p.precio?'':' free'}">${p.precio?eur(p.precio):'Gratuita'}</span>
         ${c?`<span class="badge">${c}</span>`:''}</button>
