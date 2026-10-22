@@ -78,6 +78,11 @@ body.con-ticket main{padding-bottom:190px}
 .seg button{border:0;border-radius:9px;padding:11px 6px;font:700 15px var(--body);background:none;color:var(--muted);cursor:pointer}
 .seg button[aria-pressed="true"][data-m="ef"]{background:var(--accent);color:var(--accent-ink)}
 .seg button[aria-pressed="true"][data-m="tj"]{background:var(--card);color:var(--card-ink)}
+.seg.tres{grid-template-columns:1fr 1fr 1fr}
+.seg button[aria-pressed="true"][data-m="vy"]{background:#0f9d80;color:#fff}
+.m-vy .tile.on{border-color:#0f9d80;background:#e3f6f1} .m-vy .badge{background:#0f9d80;color:#fff}
+.dot.vy{background:#0f9d80}
+.vybox{background:#e3f6f1;border:1px solid #bfe7dc;border-radius:12px;padding:10px 12px;font-size:13px;margin:10px 0}
 .chips{display:flex;gap:6px;overflow-x:auto;scrollbar-width:none}
 .chips::-webkit-scrollbar{display:none}
 .chips button{flex:none;border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:999px;padding:7px 13px;font:600 13px var(--body);cursor:pointer}
@@ -175,11 +180,13 @@ input,select{font:inherit;font-size:16px;padding:12px;border-radius:10px;border:
         <span><span class="dot ef"></span>Efectivo <b id="hEf">0,00 €</b></span>
         <span><span class="dot tj"></span>Tarjeta <b id="hTj">0,00 €</b></span>
         <span><span class="dot vi"></span><span id="hViL">Visitantes</span> <b id="hVi">0</b></span>
+        <span id="hVyW" hidden><span class="dot vy"></span>Venteya <b id="hVy">0</b></span>
       </div>
     </div>
     <div class="seg" id="seg" role="group" aria-label="Método de pago">
       <button data-m="ef" aria-pressed="true">Efectivo</button>
       <button data-m="tj" aria-pressed="false">Tarjeta</button>
+      <button data-m="vy" aria-pressed="false" hidden>Venteya</button>
     </div>
     <div class="chips" id="chips" role="group" aria-label="Secciones"></div>
   </header>
@@ -228,7 +235,7 @@ const nf  = n => (Math.round(n*100)/100).toLocaleString('es-ES',{minimumFraction
 const esc = s => String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const uid = () => Math.random().toString(36).slice(2,10);
 const r2  = n => Math.round(n*100)/100;
-const NOMBRE = {ef:'Efectivo', tj:'Tarjeta'};
+const NOMBRE = {ef:'Efectivo', tj:'Tarjeta', vy:'Venteya (pagada online)'};
 const fmtF = ms => new Date(ms).toLocaleString('es-ES',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'});
 const stamp = ms => { const d=new Date(ms), z=n=>String(n).padStart(2,'0'); return `${d.getFullYear()}-${z(d.getMonth()+1)}-${z(d.getDate())}_${z(d.getHours())}${z(d.getMinutes())}`; };
 
@@ -238,7 +245,7 @@ function nuevaSec(k){ return {productos:DEF[k].productos.map(([cat,nombre,precio
 let D;
 try{ D=JSON.parse(localStorage.getItem(KEY)||'null'); }catch(e){ D=null; }
 if(!D||!D.sec){ D={sec:{ent:nuevaSec('ent'),tie:nuevaSec('tie'),bar:nuevaSec('bar')},pagina:'ent',metodo:'ef'}; }
-['ent','tie','bar'].forEach(k=>{ if(!D.sec[k]) D.sec[k]=nuevaSec(k); const s=D.sec[k]; s.counts=s.counts||{ef:{},tj:{}}; s.counts.ef=s.counts.ef||{}; s.counts.tj=s.counts.tj||{}; s.cierres=s.cierres||[]; }); D.sec.ent.visitas=D.sec.ent.visitas||[]; D.envio=D.envio||{url:'',clave:'',movil:''}; D.cola=D.cola||[];
+['ent','tie','bar'].forEach(k=>{ if(!D.sec[k]) D.sec[k]=nuevaSec(k); const s=D.sec[k]; s.counts=s.counts||{ef:{},tj:{}}; s.counts.ef=s.counts.ef||{}; s.counts.tj=s.counts.tj||{}; s.counts.vy=s.counts.vy||{}; s.cierres=s.cierres||[]; }); D.sec.ent.visitas=D.sec.ent.visitas||[]; D.envio=D.envio||{url:'',clave:'',movil:''}; D.cola=D.cola||[];
 let guardadoOK=true;
 function save(){ try{ localStorage.setItem(KEY,JSON.stringify(D)); guardadoOK=true; }catch(e){ if(guardadoOK) toast('No se puede guardar en este navegador. Haz copias de seguridad.'); guardadoOK=false; } }
 const UI={view:'Vender',filtro:'Todo',confirmar:false,contado:'',borrarV:null,home:true};
@@ -247,24 +254,26 @@ const cats = () => DEF[D.pagina].cats;
 const catOrd = c => { const i=cats().indexOf(c); return i<0?99:i; };
 
 /* ================= cálculos ================= */
-const cnt=(m,id)=>sec().counts[m][id]||0;
+const cnt=(m,id)=>(sec().counts[m]||{})[id]||0;
 function lineas(){
-  return sec().productos.filter(p=>cnt('ef',p.id)||cnt('tj',p.id)).map(p=>{
-    const ef=cnt('ef',p.id), tj=cnt('tj',p.id);
-    return {cat:p.cat||'Otros',nombre:p.nombre,precio:p.precio,ef,tj,cant:ef+tj,subtotal:r2(p.precio*(ef+tj))};
+  return sec().productos.filter(p=>cnt('ef',p.id)||cnt('tj',p.id)||cnt('vy',p.id)).map(p=>{
+    const ef=cnt('ef',p.id), tj=cnt('tj',p.id), vy=cnt('vy',p.id);
+    return {cat:p.cat||'Otros',nombre:p.nombre,precio:p.precio,ef,tj,vy,cant:ef+tj,subtotal:r2(p.precio*(ef+tj))};
   }).sort((a,b)=>catOrd(a.cat)-catOrd(b.cat));
 }
 function resumen(l){
   const tEf=r2(l.reduce((a,x)=>a+x.precio*x.ef,0)), tTj=r2(l.reduce((a,x)=>a+x.precio*x.tj,0));
-  return {tEf,tTj,total:r2(tEf+tTj),uds:l.reduce((a,x)=>a+x.cant,0)};
+  const vy=l.reduce((a,x)=>a+(x.vy||0),0), tVy=r2(l.reduce((a,x)=>a+x.precio*(x.vy||0),0));
+  return {tEf,tTj,total:r2(tEf+tTj),uds:l.reduce((a,x)=>a+x.cant,0),vy,tVy};
 }
 function totales(){ const l=lineas(); return {l,...resumen(l)}; }
 
 /* ================= acciones ================= */
 function sumar(id,d){
-  const s=sec(); let m=D.metodo;
-  if(d<0 && !cnt(m,id)) m = m==='ef'?'tj':'ef';
+  const s=sec(); let m=D.metodo; if(m==='vy'&&D.pagina!=='ent') m='ef';
+  if(d<0 && !cnt(m,id)) m = ['ef','tj','vy'].find(x=>cnt(x,id)) || m;
   if(d<0 && !cnt(m,id)) return;
+  s.counts[m]=s.counts[m]||{};
   const prod=s.productos.find(x=>x.id===id); if(prod) apuntarHora(s,prod.precio,m,d);
   const n=cnt(m,id)+d;
   if(n<=0) delete s.counts[m][id]; else s.counts[m][id]=n;
@@ -275,23 +284,23 @@ function sumar(id,d){
 function apuntarHora(s,precio,m,d){
   s.horas=s.horas||{}; let h=new Date().getHours();
   if(d<0){ let k=h; while(k>=0&&!(s.horas[k]&&s.horas[k].uds>0)) k--; if(k<0){ k=23; while(k>h&&!(s.horas[k]&&s.horas[k].uds>0)) k--; if(k<=h) return; } h=k; }
-  const o=s.horas[h]=s.horas[h]||{uds:0,ef:0,tj:0}; o.uds+=d; o[m]=r2(o[m]+d*precio); if(o.uds<=0) delete s.horas[h];
+  const o=s.horas[h]=s.horas[h]||{uds:0,ef:0,tj:0}; o.uds+=d; if(m==='vy') o.vy=(o.vy||0)+d; else o[m]=r2(o[m]+d*precio); if(o.uds<=0) delete s.horas[h];
 }
 const tramo=h=>h==null?'Sin hora':`${String(h).padStart(2,'0')}:00–${String((h+1)%24).padStart(2,'0')}:00`;
 function franjasDe(s,t){
-  const L=Object.entries(s.horas||{}).map(([h,o])=>({h:+h,uds:o.uds,ef:r2(o.ef),tj:r2(o.tj),total:r2(o.ef+o.tj)})).sort((a,b)=>a.h-b.h);
-  const u=L.reduce((a,x)=>a+x.uds,0);
+  const L=Object.entries(s.horas||{}).map(([h,o])=>({h:+h,uds:o.uds,vy:o.vy||0,ef:r2(o.ef),tj:r2(o.tj),total:r2(o.ef+o.tj)})).sort((a,b)=>a.h-b.h);
+  const u=L.reduce((a,x)=>a+x.uds-(x.vy||0),0);
   if(t&&t.uds>u){ const ef=r2(t.tEf-L.reduce((a,x)=>a+x.ef,0)), tj=r2(t.tTj-L.reduce((a,x)=>a+x.tj,0)); L.push({h:null,uds:t.uds-u,ef,tj,total:r2(ef+tj)}); }
   return L;
 }
 function sumarFranjas(lista){
-  const m=new Map(); lista.forEach(c=>(c.franjas||[]).forEach(f=>{ const k=f.h==null?'x':f.h; const o=m.get(k)||{h:f.h,uds:0,ef:0,tj:0,total:0}; o.uds+=f.uds; o.ef=r2(o.ef+f.ef); o.tj=r2(o.tj+f.tj); o.total=r2(o.total+f.total); m.set(k,o); }));
+  const m=new Map(); lista.forEach(c=>(c.franjas||[]).forEach(f=>{ const k=f.h==null?'x':f.h; const o=m.get(k)||{h:f.h,uds:0,vy:0,ef:0,tj:0,total:0}; o.uds+=f.uds; o.vy+=f.vy||0; o.ef=r2(o.ef+f.ef); o.tj=r2(o.tj+f.tj); o.total=r2(o.total+f.total); m.set(k,o); }));
   return [...m.values()].sort((a,b)=>(a.h==null?99:a.h)-(b.h==null?99:b.h));
 }
 function bloqueFranjas(fr,titulo,esEnt){
   if(!fr.length) return '';
   const max=Math.max(...fr.map(f=>f.uds),1);
-  return `<h3>${titulo}</h3><div class="bars">`+fr.map(f=>`<div class="fr-row"><span>${tramo(f.h)}</span><span class="bt"><span style="width:${Math.round(f.uds/max*100)}%"></span></span><b>${f.uds} ${esEnt?'ent.':'uds'} · ${eur(f.total)}</b></div>`).join('')+'</div>';
+  return `<h3>${titulo}</h3><div class="bars">`+fr.map(f=>`<div class="fr-row"><span>${tramo(f.h)}</span><span class="bt"><span style="width:${Math.round(f.uds/max*100)}%"></span></span><b>${f.uds} ${esEnt?'ent.':'uds'}${f.vy?` (${f.vy} Venteya)`:''} · ${eur(f.total)}</b></div>`).join('')+'</div>';
 }
 function hojaFranjas(fr,titulo,esEnt){
   const rows=[], S=(r,col,v,s,f)=>{(rows[r]=rows[r]||[]).push({col,v,s:s||0,f});};
@@ -302,15 +311,16 @@ function hojaFranjas(fr,titulo,esEnt){
   S(tr,'A','TOTAL',1); if(fr.length){ ['B','C','D','E'].forEach((c,i)=>S(tr,c,[fr.reduce((a,f)=>a+f.uds,0),r2(fr.reduce((a,f)=>a+f.ef,0)),r2(fr.reduce((a,f)=>a+f.tj,0)),r2(fr.reduce((a,f)=>a+f.total,0))][i],i?3:1,`SUM(${c}5:${c}${last})`)); }
   return {nombre:'Por horas',xml:hojaXML(rows,{cols:'<col min="1" max="1" width="18" customWidth="1"/><col min="2" max="5" width="14" customWidth="1"/>',freeze:4})};
 }
+const esEntC=()=>D.pagina==='ent';
 function cierreActual(){
   const t=totales(), s=sec();
   const c = UI.contado.trim()==='' ? null : parseFloat(UI.contado.replace(',','.'));
-  return {id:uid()+uid(),pagina:D.pagina,fecha:Date.now(),inicio:s.inicio,total:t.total,efectivo:t.tEf,tarjeta:t.tTj,unidades:t.uds,lineas:t.l,contado:(c==null||isNaN(c))?null:c,franjas:franjasDe(s,t),visitas:D.pagina==='ent'?(s.visitas||[]).slice():undefined};
+  return {id:uid()+uid(),pagina:D.pagina,fecha:Date.now(),inicio:s.inicio,total:t.total,efectivo:t.tEf,tarjeta:t.tTj,unidades:t.uds,venteya:esEntC()?{uds:t.vy,importe:t.tVy}:undefined,lineas:t.l,contado:(c==null||isNaN(c))?null:c,franjas:franjasDe(s,t),visitas:D.pagina==='ent'?(s.visitas||[]).slice():undefined};
 }
 function cerrarCaja(){
   const c=cierreActual(), s=sec();
   s.cierres.unshift(c); s.cierres=s.cierres.slice(0,400);
-  s.counts={ef:{},tj:{}}; s.horas={}; if(D.pagina==='ent') s.visitas=[]; if(D.pagina==='bar'){ UI.ticket={}; UI.cambio=false; UI.entrega=''; } s.inicio=Date.now(); UI.confirmar=false; UI.contado='';
+  s.counts={ef:{},tj:{},vy:{}}; s.horas={}; if(D.pagina==='ent') s.visitas=[]; if(D.pagina==='bar'){ UI.ticket={}; UI.cambio=false; UI.entrega=''; } s.inicio=Date.now(); UI.confirmar=false; UI.contado='';
   if(D.envio.url&&D.envio.clave){ D.cola.push({id:c.id,cierre:c}); }
   save(); render(); toast('Caja cerrada: '+eur(c.total)); enviarCola();
 }
@@ -381,13 +391,13 @@ function pdfDe(c){
     P.text(X.uds,y,'UDS',{size:7.5,bold:true,color:grey,align:'right'}); P.text(X.imp,y,'IMPORTE',{size:7.5,bold:true,color:grey,align:'right'});
     P.line(M,y+5,W-M,y+5,[180,172,174],0.8); return y+19; };
   cab();
-  const cajas=[['TOTAL',nf(c.total)+' €'],['EFECTIVO',nf(c.efectivo)+' €'],['TARJETA',nf(c.tarjeta)+' €'],[esEnt?'VISITANTES':'UNIDADES',String(c.unidades!=null?c.unidades:R.uds)]];
+  const cajas=[['TOTAL',nf(c.total)+' €'],['EFECTIVO',nf(c.efectivo)+' €'],['TARJETA',nf(c.tarjeta)+' €'],[esEnt?'VISITANTES':'UNIDADES',String((c.unidades!=null?c.unidades:R.uds)+(c.venteya?c.venteya.uds:0))]];
   const bw=(W-2*M-24)/4;
   cajas.forEach((b,i)=>{ const x=M+i*(bw+8); P.rect(x,90,bw,46,[248,246,245],[226,220,219]);
     P.text(x+10,106,b[0],{size:7.5,bold:true,color:grey}); P.text(x+10,126,b[1],{size:14,bold:true}); });
   let y=head(164), cat=null;
   const salto=need=>{ if(y+need>H-56){ cab(); y=head(100); } };
-  (c.lineas||[]).forEach(x=>{
+  (c.lineas||[]).filter(x=>x.cant).forEach(x=>{
     if(x.cat!==cat){ cat=x.cat; salto(36); y+=4; P.text(M,y,String(cat||'Otros').toUpperCase(),{size:8,bold:true,color:wine}); y+=15; }
     salto(17);
     P.text(M,y,fit(x.nombre,9.5,false,X.pvp-M-50),{size:9.5});
@@ -401,6 +411,7 @@ function pdfDe(c){
   salto(40); y+=4; P.line(M,y-8,W-M,y-8,wine,1.2); y+=6;
   P.text(M,y,'Total',{size:12,bold:true}); P.text(X.uds,y,String(c.unidades!=null?c.unidades:R.uds),{size:12,bold:true,align:'right'});
   P.text(X.imp,y,nf(c.total)+' €',{size:12,bold:true,align:'right'}); y+=26;
+  if(c.venteya&&c.venteya.uds){ salto(20); P.text(M,y,'Entradas Venteya (pagadas online): '+c.venteya.uds,{size:10,bold:true,color:[15,157,128]}); P.text(W-M,y,nf(c.venteya.importe)+' € · no entran en la caja',{size:10,align:'right',color:grey}); y+=18; }
   if(c.contado!=null){ salto(20); const d=r2(c.contado-c.efectivo);
     P.text(M,y,'Efectivo contado en caja: '+nf(c.contado)+' €',{size:10});
     P.text(W-M,y,Math.abs(d)<0.005?'El efectivo cuadra':(d>0?'Sobran ':'Faltan ')+nf(Math.abs(d))+' €',{size:10,bold:true,align:'right',color:Math.abs(d)<0.005?[47,107,79]:[164,70,42]}); }
@@ -460,7 +471,7 @@ function zip(files){
 }
 const xe=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 function xlsxDe(c){
-  const L=c.lineas||[], esEnt=c.pagina==='ent', rows=[];
+  const LT=c.lineas||[], L=LT.filter(x=>x.cant), esEnt=c.pagina==='ent', rows=[];
   // estilos: 0 normal, 1 negrita, 2 moneda, 3 negrita moneda, 4 título, 5 cabecera, 6 sección, 7 gris
   const S=(r,col,v,s,f)=>{ (rows[r]=rows[r]||[]).push({col,v,s:s||0,f}); };
   S(1,'A','Monasterio La Santa Espina',4);
@@ -477,7 +488,10 @@ function xlsxDe(c){
   const R=resumen(L), sm=(col,v,s)=>S(tr,col,v,s,L.length?`SUM(${col}${first}:${col}${last})`:null);
   S(tr,'A','TOTAL',1); sm('D',L.reduce((a,x)=>a+x.ef,0),1); sm('E',L.reduce((a,x)=>a+x.tj,0),1); sm('F',R.uds,1); sm('G',R.tEf,3); sm('H',R.tTj,3); sm('I',R.total,3);
   let r=tr+2;
-  if(esEnt){ S(r,'A','Visitantes',1); S(r,'C',R.uds,1,`F${tr}`); r++; }
+  const vyU=c.venteya?c.venteya.uds:0;
+  if(esEnt&&vyU){ S(r,'A','Entradas Venteya (pagadas online, no entran en caja)',1); S(r,'C',vyU,1); S(r,'D',c.venteya.importe,3); r++;
+    LT.filter(x=>x.vy).forEach(x=>{ S(r,'B','   '+x.nombre); S(r,'C',x.vy); r++; }); }
+  if(esEnt){ S(r,'A','Visitantes',1); S(r,'C',R.uds+vyU,1,vyU?null:`F${tr}`); r++; }
   if(c.contado!=null){ S(r,'A','Efectivo contado en caja',1); S(r,'C',c.contado,2); r++;
     S(r,'A','Diferencia (contado − ventas en efectivo)',1); S(r,'C',r2(c.contado-R.tEf),3,`C${r-1}-G${tr}`); r++; }
   const cols='<col min="1" max="1" width="13" customWidth="1"/><col min="2" max="2" width="46" customWidth="1"/><col min="3" max="3" width="11" customWidth="1"/><col min="4" max="6" width="12" customWidth="1"/><col min="7" max="8" width="16" customWidth="1"/><col min="9" max="9" width="13" customWidth="1"/>';
@@ -576,7 +590,7 @@ function renderVisitas(t){
     : F.ambito==='esp'?`<div class="field"><label class="lbl" for="vLug">Comunidad</label><select id="vLug"><option value="">Elige comunidad</option>${CCAA.map(x=>`<option${F.lugar===x?' selected':''}>${x}</option>`).join('')}</select></div>`
     : F.ambito==='ext'?`<div class="field"><label class="lbl" for="vLug">País</label><input id="vLug" list="dlPa" value="${esc(F.lugar)}" placeholder="Ej. Portugal" autocomplete="off"><datalist id="dlPa">${PAISES.map(x=>`<option value="${esc(x)}">`).join('')}</datalist></div>`:'';
   let h=`<h2>Encuesta de visitantes</h2>
-  <p class="small" style="margin:-6px 0 12px">Apunta cada grupo al venderle las entradas. Registradas en este turno: <b>${per}</b> de <b>${t.uds}</b> entradas vendidas.${t.uds>per?` Faltan ${t.uds-per} por registrar.`:''}</p>
+  <p class="small" style="margin:-6px 0 12px">Apunta cada grupo al venderle las entradas. Registradas en este turno: <b>${per}</b> de <b>${t.uds+t.vy}</b> entradas${t.vy?` (${t.vy} de Venteya)`:''}.${t.uds+t.vy>per?` Faltan ${t.uds+t.vy-per} por registrar.`:''}</p>
   <div class="card form-v">
     <div class="field"><label class="lbl" for="vEnt">Números de entrada</label>
       <input id="vEnt" inputmode="numeric" value="${esc(F.entradas)}" placeholder="125   ·   125-130   ·   125, 128-131" autocomplete="off">
@@ -738,20 +752,21 @@ function xlsxPeriodo(k,L,titulo,sub,nombre){
   const esEnt=k==='ent', uLbl=esEnt?'Entradas':k==='bar'?'Consumiciones':'Artículos';
   const rows=[], S=(r,col,v,s,fo)=>{(rows[r]=rows[r]||[]).push({col,v,s:s||0,f:fo});};
   S(1,'A','Monasterio La Santa Espina · '+titulo,4); S(2,'A',sub,7);
-  ['Fecha','Apertura','Cierre','Efectivo','Tarjeta','Total','Efectivo contado','Diferencia',uLbl].forEach((h,i)=>S(4,'ABCDEFGHI'[i],h,5));
+  ['Fecha','Apertura','Cierre','Efectivo','Tarjeta','Total','Efectivo contado','Diferencia',uLbl].concat(esEnt?['Entradas Venteya']:[]).forEach((h,i)=>S(4,'ABCDEFGHIJ'[i],h,5));
   L.forEach((c,i)=>{ const r=5+i, x=serialXL(c.fecha), y=serialXL(c.inicio);
     S(r,'A',Math.floor(x),8); S(r,'B',y-Math.floor(y),9); S(r,'C',x-Math.floor(x),9); S(r,'D',c.efectivo,2); S(r,'E',c.tarjeta,2); S(r,'F',c.total,2,`D${r}+E${r}`);
-    if(c.contado!=null){ S(r,'G',c.contado,2); S(r,'H',r2(c.contado-c.efectivo),2,`G${r}-D${r}`); } S(r,'I',c.unidades||0); });
+    if(c.contado!=null){ S(r,'G',c.contado,2); S(r,'H',r2(c.contado-c.efectivo),2,`G${r}-D${r}`); } S(r,'I',c.unidades||0); if(esEnt) S(r,'J',c.venteya?c.venteya.uds:0); });
   const last=4+L.length, tr=last+1, sm=(col,v,s)=>S(tr,col,v,s,L.length?`SUM(${col}5:${col}${last})`:null);
   S(tr,'A','TOTAL',1); sm('D',r2(L.reduce((a,c)=>a+c.efectivo,0)),3); sm('E',r2(L.reduce((a,c)=>a+c.tarjeta,0)),3); sm('F',r2(L.reduce((a,c)=>a+c.total,0)),3); sm('I',L.reduce((a,c)=>a+(c.unidades||0),0),1);
+  if(esEnt) sm('J',L.reduce((a,c)=>a+(c.venteya?c.venteya.uds:0),0),1);
   const cols1='<col min="1" max="1" width="12" customWidth="1"/><col min="2" max="3" width="10" customWidth="1"/><col min="4" max="8" width="15" customWidth="1"/><col min="9" max="9" width="15" customWidth="1"/>';
-  const m=new Map(); L.forEach(c=>(c.lineas||[]).forEach(x=>{ const kk=x.cat+'|'+x.nombre+'|'+x.precio; const o=m.get(kk)||{cat:x.cat,nombre:x.nombre,precio:x.precio,ef:0,tj:0}; o.ef+=x.ef; o.tj+=x.tj; m.set(kk,o); }));
+  const m=new Map(); L.forEach(c=>(c.lineas||[]).forEach(x=>{ const kk=x.cat+'|'+x.nombre+'|'+x.precio; const o=m.get(kk)||{cat:x.cat,nombre:x.nombre,precio:x.precio,ef:0,tj:0,vy:0}; o.ef+=x.ef; o.tj+=x.tj; o.vy+=x.vy||0; m.set(kk,o); }));
   const cOrd=c=>{const i=DEF[k].cats.indexOf(c);return i<0?99:i;};
   const P=[...m.values()].sort((a,b)=>cOrd(a.cat)-cOrd(b.cat)||a.nombre.localeCompare(b.nombre,'es'));
   const r2s=[], T=(r,col,v,s,fo)=>{(r2s[r]=r2s[r]||[]).push({col,v,s:s||0,f:fo});};
   T(1,'A','Productos vendidos',4); T(2,'A',sub,7);
-  ['Sección','Producto','PVP','Uds efectivo','Uds tarjeta','Unidades','Importe'].forEach((h,i)=>T(4,'ABCDEFG'[i],h,5));
-  P.forEach((x,i)=>{ const r=5+i; T(r,'A',x.cat,6); T(r,'B',x.nombre); T(r,'C',x.precio,2); T(r,'D',x.ef); T(r,'E',x.tj); T(r,'F',x.ef+x.tj,0,`D${r}+E${r}`); T(r,'G',r2(x.precio*(x.ef+x.tj)),2,`C${r}*F${r}`); });
+  ['Sección','Producto','PVP','Uds efectivo','Uds tarjeta','Unidades','Importe'].concat(esEnt?['Uds Venteya (online)']:[]).forEach((h,i)=>T(4,'ABCDEFGH'[i],h,5));
+  P.forEach((x,i)=>{ const r=5+i; T(r,'A',x.cat,6); T(r,'B',x.nombre); T(r,'C',x.precio,2); T(r,'D',x.ef); T(r,'E',x.tj); T(r,'F',x.ef+x.tj,0,`D${r}+E${r}`); T(r,'G',r2(x.precio*(x.ef+x.tj)),2,`C${r}*F${r}`); if(esEnt) T(r,'H',x.vy); });
   const pl=4+P.length, pt=pl+1;
   T(pt,'A','TOTAL',1); if(P.length){ T(pt,'F',P.reduce((a,x)=>a+x.ef+x.tj,0),1,`SUM(F5:F${pl})`); T(pt,'G',r2(P.reduce((a,x)=>a+x.precio*(x.ef+x.tj),0)),3,`SUM(G5:G${pl})`); }
   const cols2='<col min="1" max="1" width="18" customWidth="1"/><col min="2" max="2" width="34" customWidth="1"/><col min="3" max="7" width="12" customWidth="1"/>';
@@ -776,7 +791,7 @@ function bloqueMes(){
   const k=D.pagina, L=cierresMes(k,UI.mes), tot=r2(L.reduce((a,c)=>a+c.total,0)), ef=r2(L.reduce((a,c)=>a+c.efectivo,0)), tj=r2(L.reduce((a,c)=>a+c.tarjeta,0)), dias=new Set(L.map(c=>new Date(c.fecha).toDateString())).size, share=puedeCompartir();
   return `<h3>Cierres del mes</h3>
   <div class="card semana"><div class="sem-nav"><button class="mini" data-mes="-1" aria-label="Mes anterior">‹</button><b>${nomMes(UI.mes)}</b><button class="mini" data-mes="1" ${UI.mes>=0?'disabled':''} aria-label="Mes siguiente">›</button></div>
-  <p class="small">${L.length?`${L.length} ${L.length===1?'cierre':'cierres'} en ${dias} ${dias===1?'día':'días'} · <b>${eur(tot)}</b> (efectivo ${eur(ef)} · tarjeta ${eur(tj)})`:'No hay cierres guardados este mes.'} Los cierres se guardan en este móvil; además, el día 1 llega por correo el resumen del mes anterior.</p>
+  <p class="small">${L.length?`${L.length} ${L.length===1?'cierre':'cierres'} en ${dias} ${dias===1?'día':'días'} · <b>${eur(tot)}</b> (efectivo ${eur(ef)} · tarjeta ${eur(tj)})${k==='ent'&&L.some(c=>c.venteya&&c.venteya.uds)?` · ${L.reduce((a,c)=>a+(c.venteya?c.venteya.uds:0),0)} entradas Venteya`:''}`:'No hay cierres guardados este mes.'} Los cierres se guardan en este móvil; además, el día 1 llega por correo el resumen del mes anterior.</p>
   <div class="exp"${share?'':' style="grid-template-columns:1fr"'}><button class="btn" data-act="mesX" ${L.length?'':'disabled'}><span class="ext xl">XLSX</span>Excel del mes</button>${share?`<button class="btn" data-act="mesShare" ${L.length?'':'disabled'}>Enviar…</button>`:''}</div></div>`;
 }
 async function compartirX(x,titulo){
@@ -843,7 +858,10 @@ function render(){
   document.getElementById('hEf').textContent=eur(t.tEf);
   document.getElementById('hTj').textContent=eur(t.tTj);
   document.getElementById('hViL').textContent=esEnt?'Visitantes':esBar?'Consumiciones':'Artículos';
-  document.getElementById('hVi').textContent=t.uds;
+  document.getElementById('hVi').textContent=t.uds+(esEnt?t.vy:0);
+  document.getElementById('hVyW').hidden=!(esEnt&&t.vy); document.getElementById('hVy').textContent=t.vy;
+  if(!esEnt&&D.metodo==='vy') D.metodo='ef';
+  document.querySelector('#seg [data-m="vy"]').hidden=!esEnt; document.getElementById('seg').classList.toggle('tres',esEnt);
   const vend=UI.view==='Vender';
   document.getElementById('seg').hidden=!vend;
   document.querySelectorAll('#seg button').forEach(b=>b.setAttribute('aria-pressed',b.dataset.m===D.metodo));
@@ -866,9 +884,9 @@ function renderVender(){
   const el=document.getElementById('vVender'), m=D.metodo; el.className='m-'+m;
   if(!sec().productos.length){ el.innerHTML='<div class="empty">Aún no hay tarifas.<br>Añádelas en la pestaña <b>Tarifas</b>.</div>'; return; }
   const gs=grupos(sec().productos).filter(g=>UI.filtro==='Todo'||g.k===UI.filtro);
-  el.innerHTML=`<p class="hint">Cobrando en <b>${NOMBRE[m].toLowerCase()}</b>. Toca ${D.pagina==='ent'?'una entrada por cada persona':D.pagina==='bar'?'cada consumición; abajo ves el pedido y el cambio':'un artículo cada vez que lo vendas'}. El botón − quita uno.</p>`+
+  el.innerHTML=(m==='vy'?`<p class="vybox"><b>Entradas de Venteya:</b> ya están pagadas online. Toca el tipo de entrada de cada persona que la enseñe; cuentan como visitantes pero no entran en el dinero de la caja.</p>`:'')+`<p class="hint">${m==='vy'?'Apuntando':'Cobrando en'} <b>${NOMBRE[m].toLowerCase()}</b>. Toca ${D.pagina==='ent'?'una entrada por cada persona':D.pagina==='bar'?'cada consumición; abajo ves el pedido y el cambio':'un artículo cada vez que lo vendas'}. El botón − quita uno.</p>`+
     gs.map(g=>`<h3 class="cat">${esc(g.k)}</h3><div class="grid">`+g.ps.map(p=>{
-      const c=cnt(m,p.id), any=c||cnt('ef',p.id)+cnt('tj',p.id);
+      const c=cnt(m,p.id), any=c||cnt('ef',p.id)+cnt('tj',p.id)+cnt('vy',p.id);
       return `<div class="cell"><button class="tile${c?' on':''}" data-add="${p.id}" aria-label="Sumar ${esc(p.nombre)}">
         <span class="n">${esc(p.nombre)}</span><span class="p${p.precio?'':' free'}">${p.precio?eur(p.precio):'Gratuita'}</span>
         ${c?`<span class="badge">${c}</span>`:''}</button>
@@ -882,9 +900,10 @@ function cuadre(t){
   return `<p class="diff ${Math.abs(d)<0.005?'ok':'bad'}">${Math.abs(d)<0.005?'El efectivo cuadra':(d>0?'Sobran ':'Faltan ')+eur(Math.abs(d))}</p>`;
 }
 function tabla(l,total){
-  let h='<div class="card"><div class="row head"><span class="grow">Artículo</span><span class="q">Efec.</span><span class="q">Tarj.</span><span class="s">Importe</span></div>', cat=null;
+  const hayVy=l.some(x=>x.vy);
+  let h=`<div class="card"><div class="row head"><span class="grow">Artículo</span><span class="q">Efec.</span><span class="q">Tarj.</span>${hayVy?'<span class="q">Vtya.</span>':''}<span class="s">Importe</span></div>`, cat=null;
   l.forEach(x=>{ if(x.cat!==cat){cat=x.cat; h+=`<div class="row sub">${esc(cat)}</div>`;}
-    h+=`<div class="row"><span class="grow">${esc(x.nombre)}</span><span class="q">${x.ef||'·'}</span><span class="q">${x.tj||'·'}</span><span class="s">${x.precio?eur(x.subtotal):'Gratis'}</span></div>`; });
+    h+=`<div class="row"><span class="grow">${esc(x.nombre)}</span><span class="q">${x.ef||'·'}</span><span class="q">${x.tj||'·'}</span>${hayVy?`<span class="q">${x.vy||'·'}</span>`:''}<span class="s">${x.precio?(x.cant?eur(x.subtotal):'—'):'Gratis'}</span></div>`; });
   return h+`<div class="row tot"><span class="grow">Total</span><span class="s">${eur(total)}</span></div></div>`;
 }
 function renderCaja(t){
@@ -893,15 +912,16 @@ function renderCaja(t){
   let h=`<h2>Caja de${esEnt?' entradas':D.pagina==='bar'?'l bar':' la tienda'}</h2><p class="small" style="margin:-6px 0 12px">Abierta desde ${desde}</p>
     <div class="sum"><div><span class="lbl"><span class="dot ef"></span>Efectivo</span><b>${eur(t.tEf)}</b></div>
     <div><span class="lbl"><span class="dot tj"></span>Tarjeta</span><b>${eur(t.tTj)}</b></div>
-    <div><span class="lbl"><span class="dot vi"></span>${esEnt?'Visitas':'Artículos'}</span><b>${t.uds}</b></div></div>`;
+    <div><span class="lbl"><span class="dot vi"></span>${esEnt?'Visitas':'Artículos'}</span><b>${t.uds+(esEnt?t.vy:0)}</b></div></div>`;
   h+= t.l.length ? tabla(t.l,t.total) : '<div class="empty">Todavía no hay ventas en este turno.</div>';
+  if(esEnt&&t.vy) h+=`<p class="vybox"><b>Entradas Venteya (pagadas online): ${t.vy}</b> · ${eur(t.tVy)}. Cuentan como visitantes, pero no están en el efectivo ni en la tarjeta de esta caja.</p>`;
   h+= bloqueFranjas(franjasDe(s,t),'Ventas por franja horaria',esEnt);
   h+=`<div class="stack"><div class="field"><label class="lbl" for="contado">Efectivo contado en caja (opcional)</label>
      <input id="contado" inputmode="decimal" placeholder="Debería haber ${eur(t.tEf)}" value="${esc(UI.contado)}"></div><div id="diffBox">${cuadre(t)}</div>`;
-  if(t.uds) h+=`<div class="exp"><button class="btn" data-exp="pdf" data-k="actual"><span class="ext pdf">PDF</span>Descargar PDF</button><button class="btn" data-exp="xlsx" data-k="actual"><span class="ext xl">XLSX</span>Descargar Excel</button></div>`;
+  if(t.uds||t.vy) h+=`<div class="exp"><button class="btn" data-exp="pdf" data-k="actual"><span class="ext pdf">PDF</span>Descargar PDF</button><button class="btn" data-exp="xlsx" data-k="actual"><span class="ext xl">XLSX</span>Descargar Excel</button></div>`;
   if(UI.confirmar) h+=`<div class="confirm"><b>¿Cerrar la caja con ${eur(t.total)}?</b><span class="small">${eur(t.tEf)} en efectivo y ${eur(t.tTj)} con tarjeta. ${esEnt&&(s.visitas||[]).length?` La encuesta (${s.visitas.length} grupos) va con el cierre.`:''} Se guarda en el historial y los contadores vuelven a cero.</span>
      <button class="btn danger" data-act="cerrar">Sí, cerrar caja</button><button class="btn ghost" data-act="cancelar">Cancelar</button></div>`;
-  else h+=`<button class="btn" data-act="confirmar" ${t.uds?'':'disabled'}>Cerrar caja</button>`;
+  else h+=`<button class="btn" data-act="confirmar" ${t.uds||t.vy?'':'disabled'}>Cerrar caja</button>`;
   h+='</div>'+bloqueMes()+(D.pagina==='bar'?bloqueSemana():'')+'<h3>Cierres anteriores</h3>';
   if(!s.cierres.length) h+='<p class="small">Aquí aparecerá cada caja que cierres, con su PDF y su Excel.</p>';
   else h+='<div class="card">'+s.cierres.slice(0,60).map((x,i)=>{
