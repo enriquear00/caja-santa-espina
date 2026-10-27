@@ -330,7 +330,7 @@ const esEntC=()=>D.pagina==='ent';
 function cierreActual(){
   const t=totales(), s=sec();
   const c = UI.contado.trim()==='' ? null : parseFloat(UI.contado.replace(',','.'));
-  return {id:uid()+uid(),pagina:D.pagina,fecha:Date.now(),inicio:s.inicio,total:t.total,efectivo:t.tEf,tarjeta:t.tTj,unidades:t.uds,venteya:esEntC()?{uds:t.vy,importe:t.tVy}:undefined,lineas:t.l,contado:(c==null||isNaN(c))?null:c,franjas:franjasDe(s,t),visitas:D.pagina==='ent'?(s.visitas||[]).slice():undefined};
+  return {id:uid()+uid(),pagina:D.pagina,gestor:UI.gestor?GESTORES[UI.gestor].nom:'',fecha:Date.now(),inicio:s.inicio,total:t.total,efectivo:t.tEf,tarjeta:t.tTj,unidades:t.uds,venteya:esEntC()?{uds:t.vy,importe:t.tVy}:undefined,lineas:t.l,contado:(c==null||isNaN(c))?null:c,franjas:franjasDe(s,t),visitas:D.pagina==='ent'?(s.visitas||[]).slice():undefined};
 }
 function cerrarCaja(){
   const c=cierreActual(), s=sec();
@@ -397,7 +397,7 @@ function pdfDe(c){
   const cab=()=>{ P.page();
     P.rect(M,38,3,34,wine);
     P.text(M+12,54,'Monasterio La Santa Espina',{size:16,bold:true});
-    P.text(M+12,70,'Cierre de caja · '+(TIT[c.pagina]||''),{size:10,color:grey});
+    P.text(M+12,70,'Cierre de caja · '+(TIT[c.pagina]||'')+(c.gestor?' · Gestiona: '+c.gestor:''),{size:10,color:grey});
     P.text(W-M,52,'Desde '+fmtF(c.inicio),{size:9,color:grey,align:'right'});
     P.text(W-M,66,'Hasta '+fmtF(c.fecha),{size:9,color:grey,align:'right'}); };
   const X={pvp:330,ef:385,tj:435,uds:480,imp:W-M};
@@ -451,8 +451,7 @@ function pdfDe(c){
       pares.forEach(([k,v])=>{ salto(14); P.text(M+10,y,fit(k,9.5,false,320),{size:9.5}); P.text(M+380,y,String(v),{size:9.5,align:'right'}); P.text(M+430,y,(tot?Math.round(v/tot*100):0)+' %',{size:9.5,align:'right',color:grey}); y+=13; }); y+=8; };
     lista('Procedencia',cuenta(V,v=>AMB[v.ambito]).sort((a,b)=>ambitoOrden(a[0])-ambitoOrden(b[0])));
     const det=cuenta(V.filter(v=>v.lugar),v=>v.lugar); if(det.length) lista('Provincia, comunidad, país o localidad',det);
-    lista('Cómo nos conocieron',cuenta(V,v=>v.como));
-  }
+    lista('Cómo nos conocieron',cuenta(V,v=>v.como));  }
   const n=P.pages.length;
   P.pages.forEach((pg,i)=>{ pg.push(''); const saved=pg; // pie de página
     const tmp=makePDF(); tmp.page(); tmp.text(M,H-28,'Generado el '+fmtF(Date.now()),{size:8,color:[150,143,146]});
@@ -490,7 +489,7 @@ function xlsxDe(c){
   // estilos: 0 normal, 1 negrita, 2 moneda, 3 negrita moneda, 4 título, 5 cabecera, 6 sección, 7 gris
   const S=(r,col,v,s,f)=>{ (rows[r]=rows[r]||[]).push({col,v,s:s||0,f}); };
   S(1,'A','Monasterio La Santa Espina',4);
-  S(2,'A','Cierre de caja · '+(TIT[c.pagina]||''),7);
+  S(2,'A','Cierre de caja · '+(TIT[c.pagina]||'')+(c.gestor?' · Gestiona: '+c.gestor:''),7);
   S(3,'A','Desde',1); S(3,'B',fmtF(c.inicio));
   S(4,'A','Hasta',1); S(4,'B',fmtF(c.fecha));
   const H=['Sección','Artículo','PVP','Uds efectivo','Uds tarjeta','Unidades','Importe efectivo','Importe tarjeta','Importe'];
@@ -626,8 +625,7 @@ function renderVisitas(t){
       <button class="x" data-delv="${v.id}">${UI.borrarV===v.id?'¿Seguro?':'Quitar'}</button></div>`;}).join('')+'</div>';
   if(V.length){
     h+=`<h3>Procedencia (personas)</h3>`+barras(cuenta(V,v=>AMB[v.ambito]).sort((a,b)=>ambitoOrden(a[0])-ambitoOrden(b[0])),per);
-    h+=`<h3>Cómo nos conocieron (personas)</h3>`+barras(cuenta(V,v=>v.como),per);
-  }
+    h+=`<h3>Cómo nos conocieron (personas)</h3>`+barras(cuenta(V,v=>v.como),per);  }
   const tot=todasVisitas();
   h+=`<h3>Encuesta completa</h3><p class="small">Todas las visitas registradas en este móvil (${tot.reduce((a,v)=>a+(+v.personas||0),0)} personas), de todos los cierres, en un solo Excel.</p>
     <div class="exp" style="grid-template-columns:1fr;margin-top:10px"><button class="btn" data-act="encuestaX" ${tot.length?'':'disabled'}><span class="ext xl">XLSX</span>Descargar encuesta en Excel</button></div>`;
@@ -691,8 +689,7 @@ function hojasEncuesta(lista,titulo){
   bloque('Otras comunidades',cuenta(lista.filter(v=>v.ambito==='esp'),v=>v.lugar));
   bloque('Países',cuenta(lista.filter(v=>v.ambito==='ext'),v=>v.lugar));
   bloque('Localidades de Valladolid',cuenta(lista.filter(v=>v.ambito==='vall'),v=>v.lugar));
-  bloque('Cómo nos conocieron',cuenta(lista,v=>v.como));
-  // por mes
+  bloque('Cómo nos conocieron',cuenta(lista,v=>v.como));  // por mes
   const mes=new Map(); lista.forEach(v=>{const d=new Date(v.hora),k=`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;mes.set(k,(mes.get(k)||0)+(+v.personas||0));});
   const nomMes=k=>{const [y,m]=k.split('-');return new Date(+y,+m-1,1).toLocaleDateString('es-ES',{month:'long',year:'numeric'});};
   bloque('Por mes',[...mes.entries()].sort((a,b)=>a[0].localeCompare(b[0])).map(([k,n])=>[nomMes(k),n]));
@@ -722,7 +719,7 @@ function renderCesta(el){
   const secs=[['ent','Entradas','#7a2335'],['vy','Entradas Venteya','#0f8a71'],['tie','Tienda','#3d6b3a'],['bar','Bar','#8a4b1f']];
   let G={ef:0,tj:0}, h=`<div class="home-in pad"><div class="secbar"><button class="back" data-cesta="0">‹ Inicio</button><span class="secname">Resumen del turno</span></div>
     <p class="small" style="margin:0">Lo vendido en los turnos abiertos ahora mismo, sin contar lo ya cerrado. Solo para consultar: no cambia nada.</p>`;
-  secs.forEach(([k,nom,col])=>{
+  secs.filter(([k])=>!UI.gestor||GESTORES[UI.gestor].secs.includes(k)).forEach(([k,nom,col])=>{
     const L=lineasDe(k), ef=r2(L.reduce((a,x)=>a+x.precio*x.ef,0)), tj=r2(L.reduce((a,x)=>a+x.precio*x.tj,0)), u=L.reduce((a,x)=>a+x.cant,0), imp=r2(L.reduce((a,x)=>a+x.importe,0));
     if(k!=='vy'){ G.ef+=ef; G.tj+=tj; }
     const desde=k==='vy'?D.sec.ent.inicio:D.sec[k].inicio;
@@ -737,9 +734,20 @@ function renderCesta(el){
     <p class="small home-note">El total no incluye las entradas Venteya, que ya están pagadas online.</p></div>`;
   el.innerHTML=h;
 }
+const GESTORES={fes:{nom:'FES',secs:['ent','vy','tie','bar'],sub:'Entradas, Entradas Venteya, Tienda y Bar'},ayto:{nom:'Ayuntamiento',secs:['ent','vy','tie'],sub:'Entradas, Entradas Venteya y Tienda'}};
+UI.gestor=null;
+function renderGestor(el){
+  el.innerHTML=`<div class="home-in pad">
+    <div class="brand"><svg viewBox="0 0 12 12" aria-hidden="true"><path d="M5 0h2v4h4v2H7v6H5V6H1V4h4z" fill="currentColor"/></svg>Monasterio La Santa Espina</div>
+    <h1>¿Quién gestiona hoy?</h1>
+    <div class="home-btns">${Object.entries(GESTORES).map(([k,g])=>`<button class="hb hb-${k==='fes'?'ent':'tie'}" data-gestor="${k}"><span class="hb-t"><b>${g.nom}</b><span>${g.sub}</span></span><span class="hb-go" aria-hidden="true">›</span></button>`).join('')}</div>
+    <p class="small home-note">Cada cierre de caja queda apuntado con quién lo gestiona.</p></div>`;
+}
 function renderHome(){
   const el=document.getElementById('home');
+  if(!UI.gestor) return renderGestor(el);
   if(UI.cesta) return renderCesta(el);
+  const G=GESTORES[UI.gestor];
   const sub=k=>{ if(k==='vy'){ const n=Object.values(D.sec.ent.counts.vy||{}).reduce((a,b)=>a+b,0); return n?`Turno abierto: <b>${n}</b> ${n===1?'entrada':'entradas'} compradas online`:'Compradas online · se apuntan al llegar'; }
     const s=D.sec[k], l=s.productos.filter(p=>(s.counts.ef[p.id]||0)+(s.counts.tj[p.id]||0)).map(p=>({precio:p.precio,ef:s.counts.ef[p.id]||0,tj:s.counts.tj[p.id]||0,cant:(s.counts.ef[p.id]||0)+(s.counts.tj[p.id]||0)}));
     const R=resumen(l); return R.uds?`Turno abierto: <b>${eur(R.total)}</b> · ${R.uds} ${k==='ent'?(R.uds===1?'entrada':'entradas'):k==='bar'?(R.uds===1?'consumición':'consumiciones'):(R.uds===1?'artículo':'artículos')}`:'Sin ventas en este turno'; };
@@ -749,9 +757,10 @@ function renderHome(){
     vy:'<rect x="5" y="2" width="14" height="20" rx="2.5"/><path d="M8 9h8M8 12h5"/><path d="M9.5 16.5l1.5 1.5 3.5-3.5"/>'};
   el.innerHTML=`<div class="home-in pad">
     <div class="brand"><svg viewBox="0 0 12 12" aria-hidden="true"><path d="M5 0h2v4h4v2H7v6H5V6H1V4h4z" fill="currentColor"/></svg>Monasterio La Santa Espina</div>
+    <div class="secbar"><span class="secname">Gestiona: ${G.nom}</span><button class="back" data-gestor="" style="margin-left:auto">Cambiar</button></div>
     <h1>¿Qué caja vas a llevar?</h1>
-    <div class="home-btns">${['ent','vy','tie','bar'].map(k=>`<button class="hb hb-${k}" data-open="${k}"><span class="hb-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${ico[k]}</svg></span><span class="hb-t"><b>${NOMSEC[k]}</b><span>${sub(k)}</span></span><span class="hb-go" aria-hidden="true">›</span></button>`).join('')}</div>
-    <button class="cesta-btn" data-cesta="1"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 9h18l-2 11H5z"/><path d="M8 9l3-6M16 9l-3-6"/><path d="M9 13v4M15 13v4M12 13v4"/></svg><span class="grow">Resumen del turno<br><span class="small">Lo vendido ahora en entradas, Venteya, tienda y bar</span></span><span class="hb-go" aria-hidden="true">›</span></button>
+    <div class="home-btns">${G.secs.map(k=>`<button class="hb hb-${k}" data-open="${k}"><span class="hb-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${ico[k]}</svg></span><span class="hb-t"><b>${NOMSEC[k]}</b><span>${sub(k)}</span></span><span class="hb-go" aria-hidden="true">›</span></button>`).join('')}</div>
+    <button class="cesta-btn" data-cesta="1"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 9h18l-2 11H5z"/><path d="M8 9l3-6M16 9l-3-6"/><path d="M9 13v4M15 13v4M12 13v4"/></svg><span class="grow">Resumen del turno<br><span class="small">Lo vendido ahora en ${UI.gestor==='ayto'?'entradas, Venteya y tienda':'entradas, Venteya, tienda y bar'}</span></span><span class="hb-go" aria-hidden="true">›</span></button>
     <p class="small home-note">Cada caja es independiente: sus ventas, cierres y tarifas no se mezclan. Las entradas Venteya se cierran junto con la caja de Entradas.</p>
     <details class="obs" ${UI.obsAbierto?'open':''}><summary>Sugerencias y observaciones <span aria-hidden="true">›</span></summary>
       <p class="small" style="margin:0 0 12px">¿Algo que cambiar o mejorar en la app, o algún fallo? Escríbelo aquí y le llega por correo a c.pardo@educatioservanda.org.</p>
@@ -866,7 +875,8 @@ async function enviarCola(){
   try{
     while(D.cola.length){
       const it=D.cola[0]; let res;
-      try{ res=await postEnvio(it.obs?{tipo:'observacion',id:it.id,obs:it.obs}:{id:it.id,cierre:it.cierre}); }catch(e){ break; }
+      const mv=(D.envio.movil||'').trim()||'Sin nombre', extra=it.cierre&&it.cierre.gestor?{movil:mv+' · '+it.cierre.gestor}:{};
+      try{ res=await postEnvio(Object.assign(it.obs?{tipo:'observacion',id:it.id,obs:it.obs}:{id:it.id,cierre:it.cierre},extra)); }catch(e){ break; }
       if(res&&res.ok){ const fue=D.cola.shift(); D.envio.ultimo=Date.now(); save(); if(fue&&fue.obs){ toast('Observación enviada. ¡Gracias!'); if(UI.home) render(); } }
       else { if(res&&res.error==='clave') toast('Envío automático: la clave no es correcta. Revísala en Tarifas.'); break; }
     }
@@ -1004,6 +1014,7 @@ function renderCarta(){
 document.addEventListener('click',e=>{
   const b=e.target.closest('button'); if(!b) return;
   if(b.dataset.open) return abrirSeccion(b.dataset.open);
+  if(b.dataset.gestor!=null){ UI.gestor=b.dataset.gestor||null; UI.cesta=false; UI.home=true; render(); window.scrollTo(0,0); return; }
   if(b.dataset.cesta!=null){ UI.cesta=b.dataset.cesta==='1'; render(); window.scrollTo(0,0); return; }
   if(b.dataset.home){ UI.home=true; UI.cambio=false; render(); window.scrollTo(0,0); return; }
   if(b.dataset.ent!=null){ UI.entrega=String(b.dataset.ent).replace('.',','); renderTicket(); return; }
@@ -1017,8 +1028,7 @@ document.addEventListener('click',e=>{
   if(b.dataset.sub) return sumar(b.dataset.sub,-1);
   if(b.dataset.del){ const s=sec(); s.productos=s.productos.filter(p=>p.id!==b.dataset.del); delete s.counts.ef[b.dataset.del]; delete s.counts.tj[b.dataset.del]; save(); render(); return; }
   if(b.dataset.amb){ if(UI.fv.ambito!==b.dataset.amb){UI.fv.ambito=b.dataset.amb; UI.fv.lugar='';} render(); return; }
-  if(b.dataset.como){ UI.fv.como=b.dataset.como; render(); return; }
-  if(b.dataset.delv){ const id=b.dataset.delv; if(UI.borrarV===id){ D.sec.ent.visitas=D.sec.ent.visitas.filter(v=>v.id!==id); UI.borrarV=null; save(); toast('Visita quitada'); } else UI.borrarV=id; render(); return; }
+  if(b.dataset.como){ UI.fv.como=b.dataset.como; render(); return; }  if(b.dataset.delv){ const id=b.dataset.delv; if(UI.borrarV===id){ D.sec.ent.visitas=D.sec.ent.visitas.filter(v=>v.id!==id); UI.borrarV=null; save(); toast('Visita quitada'); } else UI.borrarV=id; render(); return; }
   if(b.dataset.exp){ const k=b.dataset.k; const c=k==='actual'?cierreActual():sec().cierres[+k]; if(c) exportar(b.dataset.exp,c); return; }
   const a=b.dataset.act;
   if(a==='confirmar'){UI.confirmar=true;render();}
