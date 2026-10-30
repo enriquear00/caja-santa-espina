@@ -162,7 +162,7 @@ textarea{min-height:110px;resize:vertical}
 .diff.ok{color:var(--ok)} .diff.bad{color:var(--warn)}
 .empty{text-align:center;color:var(--muted);padding:32px 12px;background:var(--surface);border:1px dashed var(--line);border-radius:14px;line-height:1.5}
 .confirm{background:var(--surface);border:1px solid var(--warn);border-radius:14px;padding:14px;display:flex;flex-direction:column;gap:10px}
-.toast{position:fixed;left:50%;bottom:calc(78px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:10px 16px;border-radius:999px;font-weight:600;font-size:15px;z-index:9;max-width:calc(100% - 32px);text-align:center;display:flex;align-items:center;gap:12px;box-shadow:0 6px 18px rgba(0,0,0,.18)}
+.toast{position:fixed;left:16px;right:16px;margin:0 auto;width:fit-content;bottom:calc(78px + env(safe-area-inset-bottom,0px));background:var(--ink);color:var(--bg);padding:10px 16px;border-radius:999px;font-weight:600;font-size:15px;z-index:9;max-width:calc(100% - 32px);text-align:center;display:flex;align-items:center;gap:12px;box-shadow:0 6px 18px rgba(0,0,0,.18)}
 .toast[hidden]{display:none}
 .toast button{border:0;background:var(--bg);color:var(--ink);border-radius:999px;padding:9px 14px;min-height:40px;font:700 15px var(--body);cursor:pointer}
 body.con-ticket .toast{bottom:calc(230px + env(safe-area-inset-bottom,0px))}
@@ -172,6 +172,8 @@ body.con-ticket .toast{bottom:calc(230px + env(safe-area-inset-bottom,0px))}
 .opts button[aria-pressed="true"]{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
 .form-v{display:flex;flex-direction:column;gap:14px;padding:14px}
 .small.bad{color:var(--warn);font-weight:600}
+.aviso{background:#fdf1e3;border:1px solid #e3b98a;color:#6e3507;border-radius:12px;padding:12px 14px;margin:0 0 14px;font-size:15px;line-height:1.4}
+b.bad{color:var(--warn)}
 .small.okc{color:var(--ok);font-weight:600}
 .bars{display:flex;flex-direction:column;gap:7px;background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:12px 14px}
 .bar-row{display:grid;grid-template-columns:minmax(0,1.3fr) minmax(0,1fr) 40px;gap:8px;align-items:center;font-size:15px;font-variant-numeric:tabular-nums}
@@ -254,6 +256,7 @@ const nf  = n => (Math.round(n*100)/100).toLocaleString('es-ES',{minimumFraction
 const esc = s => String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const uid = () => Math.random().toString(36).slice(2,10);
 const r2  = n => Math.round(n*100)/100;
+const num = v => { let t=String(v==null?'':v).replace(/[€\s]/g,''); if(!t) return NaN; if(t.includes(',')) t=t.replace(/\./g,'').replace(',','.'); else if(/^\d{1,3}(\.\d{3})+$/.test(t)) t=t.replace(/\./g,''); return parseFloat(t); };
 const NOMBRE = {ef:'Efectivo', tj:'Tarjeta', vy:'Venteya (pagada online)'};
 const fmtF = ms => new Date(ms).toLocaleString('es-ES',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'});
 const stamp = ms => { const d=new Date(ms), z=n=>String(n).padStart(2,'0'); return `${d.getFullYear()}-${z(d.getMonth()+1)}-${z(d.getDate())}_${z(d.getHours())}${z(d.getMinutes())}`; };
@@ -263,10 +266,25 @@ const KEY='santaespina_caja_v1';
 function nuevaSec(k){ return {productos:DEF[k].productos.map(([cat,nombre,precio])=>({id:uid(),cat,nombre,precio})),counts:{ef:{},tj:{}},inicio:Date.now(),cierres:[]}; }
 let D;
 try{ D=JSON.parse(localStorage.getItem(KEY)||'null'); }catch(e){ D=null; }
-if(!D||!D.sec){ D={sec:{ent:nuevaSec('ent'),tie:nuevaSec('tie'),bar:nuevaSec('bar')},pagina:'ent',metodo:'ef'}; }
-['ent','tie','bar'].forEach(k=>{ if(!D.sec[k]) D.sec[k]=nuevaSec(k); const s=D.sec[k]; s.counts=s.counts||{ef:{},tj:{}}; s.counts.ef=s.counts.ef||{}; s.counts.tj=s.counts.tj||{}; s.counts.vy=s.counts.vy||{}; s.cierres=s.cierres||[]; }); D.sec.ent.visitas=D.sec.ent.visitas||[]; D.envio=D.envio||{url:'',clave:'',movil:''}; D.cola=D.cola||[];
+function normalizar(){
+  if(!D||!D.sec){ D={sec:{ent:nuevaSec('ent'),tie:nuevaSec('tie'),bar:nuevaSec('bar')},pagina:'ent',metodo:'ef'}; }
+  ['ent','tie','bar'].forEach(k=>{ if(!D.sec[k]) D.sec[k]=nuevaSec(k); const s=D.sec[k]; s.productos=Array.isArray(s.productos)?s.productos:[]; s.counts=s.counts||{ef:{},tj:{}}; s.counts.ef=s.counts.ef||{}; s.counts.tj=s.counts.tj||{}; s.counts.vy=s.counts.vy||{}; s.cierres=Array.isArray(s.cierres)?s.cierres:[]; s.inicio=s.inicio||Date.now(); });
+  D.sec.ent.visitas=D.sec.ent.visitas||[]; D.envio=Object.assign({url:'',clave:'',movil:''},D.envio||{}); D.cola=Array.isArray(D.cola)?D.cola:[];
+  if(!D.sec[D.pagina]) D.pagina='ent'; if(!['ef','tj','vy'].includes(D.metodo)) D.metodo='ef';
+}
+normalizar();
 let guardadoOK=true;
-function save(){ try{ localStorage.setItem(KEY,JSON.stringify(D)); guardadoOK=true; }catch(e){ if(guardadoOK) toast('No se puede guardar en este navegador. Haz copias de seguridad.'); guardadoOK=false; } }
+function save(){
+  for(let i=0;i<6;i++){
+    try{ localStorage.setItem(KEY,JSON.stringify(D)); guardadoOK=true; return; }
+    catch(e){ // memoria llena: se quitan los cierres más antiguos (más de 3 meses), que ya están en el registro central
+      const lim=Date.now()-92*864e5; let quitados=0;
+      ['ent','tie','bar'].forEach(k=>{ const c=D.sec[k].cierres, n=c.length; if(n>30){ const keep=c.filter((x,j)=>j<30||x.fecha>=lim); const corte=Math.max(30,Math.floor(keep.length*0.8)); D.sec[k].cierres=keep.slice(0,corte); quitados+=n-D.sec[k].cierres.length; } });
+      if(!quitados) break;
+    }
+  }
+  if(guardadoOK) toast('No se puede guardar en este móvil. Guarda una copia de seguridad.'); guardadoOK=false;
+}
 const UI={view:'Vender',filtro:'Todo',confirmar:false,contado:'',borrarV:null,home:true};
 const sec = () => D.sec[D.pagina];
 const cats = () => DEF[D.pagina].cats;
@@ -333,14 +351,14 @@ function hojaFranjas(fr,titulo,esEnt){
 const esEntC=()=>D.pagina==='ent';
 function cierreActual(){
   const t=totales(), s=sec();
-  const c = UI.contado.trim()==='' ? null : parseFloat(UI.contado.replace(',','.'));
+  const c = UI.contado.trim()==='' ? null : num(UI.contado);
   return {id:uid()+uid(),pagina:D.pagina,gestor:UI.gestor?GESTORES[UI.gestor].nom:'',fecha:Date.now(),inicio:s.inicio,total:t.total,efectivo:t.tEf,tarjeta:t.tTj,unidades:t.uds,venteya:esEntC()?{uds:t.vy,importe:t.tVy}:undefined,lineas:t.l,contado:(c==null||isNaN(c))?null:c,franjas:franjasDe(s,t),visitas:D.pagina==='ent'?(s.visitas||[]).slice():undefined};
 }
 function cerrarCaja(){
   const c=cierreActual(), s=sec();
   s.cierres.unshift(c); s.cierres=s.cierres.slice(0,400);
   s.counts={ef:{},tj:{},vy:{}}; s.horas={}; if(D.pagina==='ent') s.visitas=[]; if(D.pagina==='bar'){ UI.ticket={}; UI.cambio=false; UI.entrega=''; } s.inicio=Date.now(); UI.confirmar=false; UI.contado='';
-  if(D.envio.url&&D.envio.clave){ D.cola.push({id:c.id,cierre:c}); }
+  D.cola.push({id:c.id,cierre:c}); D.cola=D.cola.slice(-300);
   save(); render(); toast('Caja cerrada: '+eur(c.total)); enviarCola();
 }
 
@@ -754,7 +772,7 @@ function renderHome(){
   const G=GESTORES[UI.gestor];
   const sub=k=>{ if(k==='vy'){ const n=Object.values(D.sec.ent.counts.vy||{}).reduce((a,b)=>a+b,0); return n?`Turno abierto: <b>${n}</b> ${n===1?'entrada':'entradas'} compradas online`:'Compradas online · se apuntan al llegar'; }
     const s=D.sec[k], l=s.productos.filter(p=>(s.counts.ef[p.id]||0)+(s.counts.tj[p.id]||0)).map(p=>({precio:p.precio,ef:s.counts.ef[p.id]||0,tj:s.counts.tj[p.id]||0,cant:(s.counts.ef[p.id]||0)+(s.counts.tj[p.id]||0)}));
-    const R=resumen(l); return R.uds?`Turno abierto: <b>${eur(R.total)}</b> · ${R.uds} ${k==='ent'?(R.uds===1?'entrada':'entradas'):k==='bar'?(R.uds===1?'consumición':'consumiciones'):(R.uds===1?'artículo':'artículos')}`:'Sin ventas en este turno'; };
+    const R=resumen(l); return R.uds?`${turnoViejo(s)?'<b class="bad">Sin cerrar desde '+new Date(s.inicio).toLocaleDateString('es-ES',{weekday:'long',day:'numeric'})+'</b> · ':''}Turno abierto: <b>${eur(R.total)}</b> · ${R.uds} ${k==='ent'?(R.uds===1?'entrada':'entradas'):k==='bar'?(R.uds===1?'consumición':'consumiciones'):(R.uds===1?'artículo':'artículos')}`:'Sin ventas en este turno'; };
   const ico={ent:'<path d="M3 7h18v3a2 2 0 0 0 0 4v3H3v-3a2 2 0 0 0 0-4z"/><path d="M14 7v10" stroke-dasharray="2 2"/>',
     tie:'<path d="M5 8h14l-1 12H6z"/><path d="M9 8a3 3 0 0 1 6 0"/>',
     bar:'<path d="M5 9h11v5a5 5 0 0 1-5 5h-1a5 5 0 0 1-5-5z"/><path d="M16 10h1.5a2.5 2.5 0 0 1 0 5H16"/><path d="M8 3c0 1.5 1 1.5 1 3M11 3c0 1.5 1 1.5 1 3"/>',
@@ -783,7 +801,7 @@ function ticketInfo(){ const s=D.sec.bar; let tot=0,n=0; for(const [id,q] of Obj
 function renderTicket(){
   const el=document.getElementById('ticket'), on=!UI.home&&D.pagina==='bar'&&UI.view==='Vender';
   el.hidden=!on; document.body.classList.toggle('con-ticket',on); if(!on) return;
-  const {tot,n}=ticketInfo(), ent=parseFloat(String(UI.entrega).replace(',','.'));
+  const {tot,n}=ticketInfo(), ent=num(UI.entrega);
   let h=`<div class="tk-row"><span class="tk-l"><span class="lbl">Pedido actual</span><b>${eur(tot)}</b><span class="small">${n} ${n===1?'consumición':'consumiciones'}</span></span>
     <button class="tk-b" data-act="cambio" ${n?'':'disabled'} aria-pressed="${UI.cambio}">Cambio</button><button class="tk-b ghost" data-act="nuevoPed" ${n?'':'disabled'}>Nuevo pedido</button></div>`;
   if(UI.cambio&&n){
@@ -797,7 +815,7 @@ function renderTicket(){
   el.innerHTML=h;
 }
 function resCambio(){
-  const {tot}=ticketInfo(), ent=parseFloat(String(UI.entrega).replace(',','.')), box=document.getElementById('tkRes'); if(!box) return;
+  const {tot}=ticketInfo(), ent=num(UI.entrega), box=document.getElementById('tkRes'); if(!box) return;
   if(UI.entrega===''||isNaN(ent)){ box.innerHTML='<span class="small">Escribe con cuánto paga o toca un billete.</span>'; return; }
   const d=r2(ent-tot); box.innerHTML=d>=0?`<span class="tk-dev">Devolver <b>${eur(d)}</b></span>`:`<span class="tk-dev bad">Faltan <b>${eur(-d)}</b></span>`;
 }
@@ -870,8 +888,9 @@ async function compartirSemana(){ try{ await compartirX(xlsxSemana(UI.semana),'C
 /* ================= envío automático de cierres ================= */
 let enviando=false;
 async function postEnvio(cuerpo){
-  const r=await fetch(D.envio.url.trim(),{method:'POST',body:JSON.stringify(Object.assign({clave:D.envio.clave.trim(),movil:D.envio.movil.trim()||'Sin nombre'},cuerpo))});
-  return r.json();
+  const ac=window.AbortController?new AbortController():null, to=ac?setTimeout(()=>ac.abort(),45000):0;
+  try{ const r=await fetch(D.envio.url.trim(),{method:'POST',body:JSON.stringify(Object.assign({clave:D.envio.clave.trim(),movil:(D.envio.movil||'').trim()||'Sin nombre'},cuerpo)),signal:ac?ac.signal:undefined});
+    return await r.json(); } finally { clearTimeout(to); }
 }
 async function enviarCola(){
   if(enviando||!D.cola.length||!D.envio.url||!D.envio.clave||(navigator.onLine===false)) return;
@@ -907,6 +926,7 @@ function bloqueEnvio(){
     <button class="btn" data-act="probarEnv">Guardar y probar conexión</button>
     <span id="envRes" class="small">${on?`${D.cola.length?`<b>${D.cola.length}</b> ${D.cola.length===1?'cierre pendiente':'cierres pendientes'} de enviar.`:'Todo enviado.'}${E.ultimo?' Último envío: '+fmtF(E.ultimo)+'.':''}`:'Desactivado: rellena los datos para activarlo.'}</span>
     ${D.cola.length&&on?'<button class="btn ghost" data-act="enviarYa">Enviar pendientes ahora</button>':''}
+    ${on?'<button class="btn ghost" data-act="reenviar">Volver a mandar los cierres del último mes</button><span class="small">Por si algún cierre no llegó. Los que ya estaban en el registro no se repiten.</span>':''}
   </div>`;
 }
 window.addEventListener('online',enviarCola);
@@ -963,7 +983,7 @@ function renderVender(){
     }).join('')+'</div>').join('');
 }
 function cuadre(t){
-  const c=parseFloat(String(UI.contado).replace(',','.'));
+  const c=num(UI.contado);
   if(UI.contado.trim()===''||isNaN(c)) return '';
   const d=c-t.tEf;
   return `<p class="diff ${Math.abs(d)<0.005?'ok':'bad'}">${Math.abs(d)<0.005?'El efectivo cuadra':(d>0?'Sobran ':'Faltan ')+eur(Math.abs(d))}</p>`;
@@ -975,10 +995,11 @@ function tabla(l,total){
     h+=`<div class="row"><span class="grow">${esc(x.nombre)}</span><span class="q">${x.ef||'·'}</span><span class="q">${x.tj||'·'}</span>${hayVy?`<span class="q">${x.vy||'·'}</span>`:''}<span class="s">${x.precio?(x.cant?eur(x.subtotal):'—'):'Gratis'}</span></div>`; });
   return h+`<div class="row tot"><span class="grow">Total</span><span class="s">${eur(total)}</span></div></div>`;
 }
+const turnoViejo=s=>new Date(s.inicio).toDateString()!==new Date().toDateString();
 function renderCaja(t){
   const el=document.getElementById('vCaja'), s=sec(), esEnt=D.pagina==='ent';
   const desde=new Date(s.inicio).toLocaleString('es-ES',{weekday:'short',day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'});
-  let h=`<h2>Caja de${esEnt?' entradas':D.pagina==='bar'?'l bar':' la tienda'}</h2><p class="small" style="margin:-6px 0 12px">Abierta desde ${desde}</p>
+  let h=`<h2>Caja de${esEnt?' entradas':D.pagina==='bar'?'l bar':' la tienda'}</h2><p class="small" style="margin:-6px 0 12px">Abierta desde ${desde}</p>${turnoViejo(s)&&(t.uds||t.vy)?`<p class="aviso">Este turno sigue abierto desde <b>${desde}</b>. Si es de otro día, ciérralo para que no se mezclen las ventas.</p>`:''}
     <div class="sum"><div><span class="lbl"><span class="dot ef"></span>Efectivo</span><b>${eur(t.tEf)}</b></div>
     <div><span class="lbl"><span class="dot tj"></span>Tarjeta</span><b>${eur(t.tTj)}</b></div>
     <div><span class="lbl"><span class="dot vi"></span>${esEnt?'Visitas':'Artículos'}</span><b>${t.uds+(esEnt?t.vy:0)}</b></div></div>`;
@@ -1009,7 +1030,7 @@ function renderCarta(){
     <button class="btn" type="submit">Añadir</button></form>`;
   h+=grupos(sec().productos).map(g=>`<h3>${esc(g.k)}</h3><div class="card">`+g.ps.map(p=>`<div class="row"><span class="grow">${esc(p.nombre)}</span><span class="s">${p.precio?eur(p.precio):'Gratuita'}</span><button class="x" data-del="${p.id}" aria-label="Quitar ${esc(p.nombre)}">${UI.borrarP===p.id?'¿Seguro? Sí, quitar':'Quitar'}</button></div>`).join('')+'</div>').join('');
   h+=bloqueEnvio();
-  h+=`<h3>Copia de seguridad</h3><p class="small">Todo se guarda en este móvil, sin internet. Si borras los datos del navegador se pierde, así que de vez en cuando guarda una copia.</p>
+  h+=`<h3>Copia de seguridad</h3><p class="small">Todo se guarda en este móvil, sin internet. Si borras los datos del navegador se pierde, así que de vez en cuando guarda una copia.${D.ultimaCopia?` Última copia: ${fmtF(D.ultimaCopia)}.`:' <b>Aún no has guardado ninguna copia.</b>'}</p>
     <div class="exp" style="margin-top:10px"><button class="btn" data-act="backup">Guardar copia</button><button class="btn" data-act="restore">Recuperar copia</button></div>`;
   el.innerHTML=h;
 }
@@ -1054,14 +1075,18 @@ document.addEventListener('click',e=>{
   if(a==='mesShare'){ try{ compartirX(xlsxMes(UI.mes),TIT[D.pagina]+' · '+nomMes(UI.mes)); }catch(e){ toast('No se pudo crear el archivo'); } }
   if(a==='probarEnv') probarEnvio();
   if(a==='enviarYa') enviarCola();
+  if(a==='reenviar'){ const lim=Date.now()-31*864e5, ya=new Set(D.cola.map(x=>x.id)); let n=0;
+    ['ent','tie','bar'].forEach(k=>D.sec[k].cierres.filter(c=>c.fecha>=lim&&!ya.has(c.id)).forEach(c=>{ D.cola.push({id:c.id,cierre:c}); n++; }));
+    save(); render(); toast(n?`${n} ${n===1?'cierre':'cierres'} en cola para mandar`:'No hay cierres del último mes en este móvil'); enviarCola(); }
   if(a==='encuestaX') descargarEncuesta();
+  if(a==='backup'){ D.ultimaCopia=Date.now(); save(); }
   if(a==='backup') descargar('santa-espina_copia_'+stamp(Date.now())+'.json',new TextEncoder().encode(JSON.stringify(D)),'application/json');
   if(a==='restore'){ if(confirm('Recuperar una copia sustituye TODO lo guardado en este móvil (ventas, cierres y tarifas) por lo que haya en la copia. ¿Continuar?')) document.getElementById('fImport').click(); }
 });
 document.getElementById('fImport').addEventListener('change',e=>{
   const f=e.target.files&&e.target.files[0]; if(!f) return;
   const rd=new FileReader();
-  rd.onload=()=>{ try{ const x=JSON.parse(rd.result); if(!x||!x.sec||!x.sec.ent||!x.sec.tie) throw 0; D=x; if(!D.sec.bar) D.sec.bar=nuevaSec('bar'); save(); render(); toast('Copia recuperada'); }catch(err){ toast('Ese archivo no es una copia de esta app'); } e.target.value=''; };
+  rd.onload=()=>{ try{ const x=JSON.parse(rd.result); if(!x||!x.sec||!x.sec.ent||!x.sec.tie) throw 0; D=x; normalizar(); UI.home=true; save(); render(); toast('Copia recuperada'); }catch(err){ toast('Ese archivo no es una copia de esta app'); } e.target.value=''; };
   rd.readAsText(f);
 });
 UI.obs={tipo:'Cambio o mejora',texto:'',nombre:''};
@@ -1087,7 +1112,7 @@ document.addEventListener('toggle',e=>{ if(e.target.classList&&e.target.classLis
 document.addEventListener('keydown',e=>{ if(e.key==='Enter'&&(e.target.id==='vEnt'||e.target.id==='vPers')){ e.preventDefault(); const n=document.querySelector('[data-amb]'); if(n) n.focus(); } });
 document.addEventListener('submit',e=>{
   if(e.target.id!=='fAdd') return; e.preventDefault();
-  const n=document.getElementById('pNombre').value.trim(), p=parseFloat(document.getElementById('pPrecio').value.replace(',','.')), cat=document.getElementById('pCat').value;
+  const n=document.getElementById('pNombre').value.trim(), p=num(document.getElementById('pPrecio').value), cat=document.getElementById('pCat').value;
   if(!n||isNaN(p)||p<0){toast('Escribe un nombre y un precio válido (0 si es gratuita)');return;}
   sec().productos.push({id:uid(),nombre:n,precio:r2(p),cat}); save(); render(); toast('Añadido: '+n);
 });
