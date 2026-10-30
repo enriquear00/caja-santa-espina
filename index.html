@@ -53,7 +53,7 @@ header{position:sticky;top:0;z-index:5;background:var(--bg);padding-block:10px 1
 .hb-t{flex:1;min-width:0;display:flex;flex-direction:column;gap:4px}.hb-t>b{font:700 22px var(--display);color:var(--c)}.hb-t span b{color:var(--ink)}.hb-t span{font-size:15px;color:var(--muted);font-variant-numeric:tabular-nums}
 .hb-go{font-size:28px;color:var(--muted)}
 .home-note{text-align:center}
-.cesta-btn{display:flex;align-items:center;gap:12px;width:100%;border:1px dashed var(--line);background:var(--surface);color:var(--ink);border-radius:16px;padding:14px 16px;font:600 16px var(--body);cursor:pointer;text-align:left}
+.cesta-btn{display:flex;align-items:center;gap:12px;width:100%;border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:16px;padding:14px 16px;font:600 16px var(--body);cursor:pointer;text-align:left}
 .cesta-btn svg{width:26px;height:26px;flex:none}
 .ces-sec{border-left:6px solid var(--c);padding:4px 14px 6px}
 .ces-sec h3{font:700 19px var(--display);color:var(--c);margin:8px 0 2px}
@@ -61,7 +61,7 @@ header{position:sticky;top:0;z-index:5;background:var(--bg);padding-block:10px 1
 .ces-tot div{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:10px}
 .ces-tot b{display:block;font-size:19px;margin-top:4px;font-variant-numeric:tabular-nums}
 .ticket{position:fixed;left:0;right:0;bottom:calc(58px + env(safe-area-inset-bottom,0px));z-index:6;background:var(--surface);border-top:2px solid var(--accent);box-shadow:0 -6px 18px rgba(0,0,0,.08);padding-block:10px;max-width:600px;margin:0 auto;display:flex;flex-direction:column;gap:10px}
-body.con-ticket main{padding-bottom:190px}
+body.con-ticket main{padding-bottom:110px}
 .tk-row{display:flex;align-items:center;gap:8px}
 .tk-l{flex:1;min-width:0;display:flex;flex-direction:column;line-height:1.15}.tk-l b{font-size:22px;font-variant-numeric:tabular-nums}
 .tk-b{border:0;border-radius:10px;padding:12px 14px;min-height:48px;font:700 16px var(--body);background:var(--accent);color:var(--accent-ink);cursor:pointer}
@@ -69,7 +69,13 @@ body.con-ticket main{padding-bottom:190px}
 .tk-b[disabled]{opacity:.45}
 .tk-cambio{display:flex;flex-direction:column;gap:8px}
 .tk-q{display:flex;gap:6px;flex-wrap:wrap}.tk-q button{flex:1;min-width:56px;border:1px solid var(--line);background:var(--bg);color:var(--ink);border-radius:10px;padding:12px 6px;min-height:48px;font:700 16px var(--body);cursor:pointer}
-.tk-cambio input{flex:0 0 120px}
+.tk-cambio input{flex:0 0 140px;font-size:20px;min-height:52px}
+body.con-hoja{overflow:hidden}
+.ticket.sheet{top:0;bottom:0;z-index:20;border-top:0;box-shadow:none;justify-content:flex-start;padding-top:calc(16px + env(safe-area-inset-top,0px));padding-bottom:calc(16px + env(safe-area-inset-bottom,0px));overflow:auto;gap:16px}
+.sheet-h{display:flex;align-items:center;gap:10px}.sheet-h h2{margin:0;font-family:var(--display);font-size:24px;flex:1}
+.sheet-tot{background:var(--accent-soft);border-radius:14px;padding:14px 16px}.sheet-tot b{display:block;font-size:40px;line-height:1.1;font-variant-numeric:tabular-nums}
+.ticket.sheet .tk-q button{min-height:56px;font-size:18px}
+.ticket.sheet #tkRes{font-size:17px}.ticket.sheet .tk-dev b{font-size:30px}
 .tk-dev{font-size:15px}.tk-dev b{font-size:22px;color:var(--ok)}.tk-dev.bad b{color:var(--warn)}
 .semana{padding:12px 14px;display:flex;flex-direction:column;gap:10px}.sem-nav{display:flex;align-items:center;justify-content:space-between;gap:8px}.sem-nav .mini{font-size:16px;padding:6px 14px}
 .pages{display:grid;grid-template-columns:1fr 1fr;gap:0;border-bottom:2px solid var(--line)}
@@ -154,18 +160,17 @@ textarea{min-height:110px;resize:vertical}
 .obs .field{margin-bottom:10px}
 .form{display:flex;gap:8px;align-items:flex-end;flex-wrap:wrap}
 .form .wide{flex:1 1 100%}
-.form .price{flex:0 0 96px}
-.form .catf{flex:1 1 140px}
+.form .price{flex:1 1 120px}
+.form .catf{flex:1 1 100%}
 .form .btn{width:auto;padding:12px 18px}
 .x{border:1px solid transparent;background:none;color:var(--warn);font:600 15px var(--body);padding:10px 12px;min-height:44px;border-radius:10px;cursor:pointer}
 .diff{font-weight:700;margin:0}
 .diff.ok{color:var(--ok)} .diff.bad{color:var(--warn)}
 .empty{text-align:center;color:var(--muted);padding:32px 12px;background:var(--surface);border:1px dashed var(--line);border-radius:14px;line-height:1.5}
 .confirm{background:var(--surface);border:1px solid var(--warn);border-radius:14px;padding:14px;display:flex;flex-direction:column;gap:10px}
-.toast{position:fixed;left:16px;right:16px;margin:0 auto;width:fit-content;bottom:calc(78px + env(safe-area-inset-bottom,0px));background:var(--ink);color:var(--bg);padding:10px 16px;border-radius:999px;font-weight:600;font-size:15px;z-index:9;max-width:calc(100% - 32px);text-align:center;display:flex;align-items:center;gap:12px;box-shadow:0 6px 18px rgba(0,0,0,.18)}
+.toast{position:fixed;left:16px;right:16px;margin:0 auto;width:fit-content;top:calc(10px + env(safe-area-inset-top,0px));background:var(--ink);color:var(--bg);padding:10px 16px;border-radius:14px;font-weight:600;font-size:15px;z-index:30;max-width:calc(100% - 32px);text-align:center;display:flex;align-items:center;gap:12px;box-shadow:0 6px 18px rgba(0,0,0,.18)}
 .toast[hidden]{display:none}
 .toast button{border:0;background:var(--bg);color:var(--ink);border-radius:999px;padding:9px 14px;min-height:40px;font:700 15px var(--body);cursor:pointer}
-body.con-ticket .toast{bottom:calc(230px + env(safe-area-inset-bottom,0px))}
 .small{font-size:15px;color:var(--muted);line-height:1.45}
 .opts{display:flex;flex-wrap:wrap;gap:6px}
 .opts button{border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:999px;padding:10px 16px;min-height:44px;font:600 15px var(--body);cursor:pointer}
@@ -185,12 +190,13 @@ b.bad{color:var(--warn)}
 .hrow:last-child{border-bottom:0}
 .hrow .grow{flex:1;min-width:0}
 .hrow .s{font-weight:700;white-space:nowrap}
-.desc-btn{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;margin:0 0 14px;min-height:48px;border:1.5px dashed var(--line);background:var(--surface);color:var(--ink);border-radius:12px;font:700 16px var(--body);cursor:pointer}
-.desc-box{border:1.5px solid var(--accent);border-radius:14px;padding:14px;margin:0 0 16px;background:var(--surface)}
+.desc-btn{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;margin:22px 0 8px;min-height:48px;border:1.5px dashed var(--line);background:var(--surface);color:var(--ink);border-radius:12px;font:700 16px var(--body);cursor:pointer}
+.desc-box{border:1.5px solid var(--accent);border-radius:14px;padding:14px;margin:22px 0 8px;background:var(--surface)}
 .desc-box h3{margin:0 0 10px}
 .desc-res{font-size:17px;margin:4px 0 12px}
 .desc-res b{font-size:20px}
 .row.dsc .grow,.row.dsc .s{color:var(--warn)}
+.edit-t{display:flex;justify-content:flex-end;margin:4px 0 -4px}.edit-t .mini{min-height:44px;padding:8px 14px}
 .warnbox{background:var(--accent-soft);border-radius:12px;padding:12px 14px;font-size:13px;line-height:1.45;margin-bottom:12px}
 @media (prefers-reduced-motion:reduce){.tile{transition:none}}
 </style>
@@ -819,17 +825,22 @@ UI.ticket=UI.ticket||{}; UI.cambio=false; UI.entrega='';
 function ticketInfo(){ const s=D.sec.bar; let tot=0,n=0; for(const [id,q] of Object.entries(UI.ticket)){ const p=s.productos.find(x=>x.id===id); if(p&&q>0){tot+=p.precio*q;n+=q;} } return {tot:r2(Math.max(0,tot-(UI.tkDesc||0))),n,bruto:r2(tot)}; }
 function renderTicket(){
   const el=document.getElementById('ticket'), on=!UI.home&&D.pagina==='bar'&&UI.view==='Vender';
-  el.hidden=!on; document.body.classList.toggle('con-ticket',on); if(!on) return;
-  const {tot,n}=ticketInfo(), ent=num(UI.entrega);
-  let h=`<div class="tk-row"><span class="tk-l"><span class="lbl">Pedido actual</span><b>${eur(tot)}</b><span class="small">${n} ${n===1?'consumición':'consumiciones'}${UI.tkDesc?` · descuento −${eur(UI.tkDesc)}`:''}</span></span>
-    <button class="tk-b" data-act="cambio" ${n?'':'disabled'} aria-pressed="${UI.cambio}">Cambio</button><button class="tk-b ghost" data-act="nuevoPed" ${n?'':'disabled'}>Nuevo pedido</button></div>`;
-  if(UI.cambio&&n){
+  el.hidden=!on; document.body.classList.toggle('con-ticket',on); if(!on){ el.classList.remove('sheet'); document.body.classList.remove('con-hoja'); return; }
+  const {tot,n}=ticketInfo(), ent=num(UI.entrega), hoja=UI.cambio&&n;
+  el.classList.toggle('sheet',!!hoja); document.body.classList.toggle('con-hoja',!!hoja);
+  let h;
+  if(!hoja){
+    h=`<div class="tk-row"><span class="tk-l"><span class="small" style="white-space:nowrap">Pedido (${n})${UI.tkDesc?` · −${eur(UI.tkDesc)}`:''}</span><b>${eur(tot)}</b></span>
+    <button class="tk-b" data-act="cambio" ${n?'':'disabled'}>Cambio</button><button class="tk-b ghost" data-act="nuevoPed" ${n?'':'disabled'}>Nuevo pedido</button></div>`;
+  } else {
     const quick=[...new Set([Math.ceil(tot),5,10,20,50].filter(v=>v>=tot))].sort((a,b)=>a-b).slice(0,5);
     let res='<span class="small">Escribe con cuánto paga o toca un billete.</span>';
     if(UI.entrega!==''&&!isNaN(ent)){ const d=r2(ent-tot); res=d>=0?`<span class="tk-dev">Devolver <b>${eur(d)}</b></span>`:`<span class="tk-dev bad">Faltan <b>${eur(-d)}</b></span>`; }
-    h+=`<div class="tk-cambio"><div class="tk-q"><button data-ent="${tot}">Justo</button>${quick.filter(v=>v!==tot).map(v=>`<button data-ent="${v}">${v} €</button>`).join('')}</div>
-      <div class="tk-row"><input id="entrega" inputmode="decimal" placeholder="Entrega €" value="${esc(UI.entrega)}" aria-label="Con cuánto paga"><span id="tkRes">${res}</span></div>
-      <button class="btn" data-act="cobrado">Cobrado · nuevo pedido</button></div>`;
+    h=`<div class="sheet-h"><h2>Cobrar</h2><button class="tk-b ghost" data-act="cambio">‹ Volver</button></div>
+      <div class="sheet-tot"><span class="lbl">Total del pedido · ${n} ${n===1?'consumición':'consumiciones'}${UI.tkDesc?` · descuento −${eur(UI.tkDesc)}`:''}</span><b>${eur(tot)}</b></div>
+      <div class="tk-cambio"><span class="lbl">¿Con cuánto paga?</span><div class="tk-q"><button data-ent="${tot}">Justo</button>${quick.filter(v=>v!==tot).map(v=>`<button data-ent="${v}">${v} €</button>`).join('')}</div>
+      <div class="tk-row"><input id="entrega" inputmode="decimal" placeholder="Otra cantidad €" value="${esc(UI.entrega)}" aria-label="Con cuánto paga"><span id="tkRes">${res}</span></div></div>
+      <button class="btn" data-act="cobrado">Cobrado · nuevo pedido</button>`;
   }
   el.innerHTML=h;
 }
@@ -962,9 +973,9 @@ function render(){
   if(UI.home){ renderHome(); renderTicket(); return; }
   const t=totales(), esEnt=D.pagina==='ent', esBar=D.pagina==='bar';
   document.getElementById('secName').textContent=UI.soloVy?'Entradas Venteya':NOMSEC[D.pagina];
-  document.getElementById('hLbl').textContent=esEnt?'Entradas vendidas en este turno':esBar?'Bar: vendido en este turno':'Tienda: vendido en este turno';
+  document.getElementById('hLbl').textContent='Este turno';
   document.getElementById('hTotal').textContent=UI.soloVy?`${t.vy} ${t.vy===1?'entrada':'entradas'}`:eur(t.total);
-  if(UI.soloVy) document.getElementById('hLbl').textContent='Entradas Venteya en este turno (compradas online)';
+  if(UI.soloVy) document.getElementById('hLbl').textContent='Venteya · este turno';
   document.getElementById('hEf').textContent=eur(t.tEf);
   document.getElementById('hTj').textContent=eur(t.tTj);
   document.getElementById('hViL').textContent=esEnt?'Visitantes':esBar?'Consumiciones':'Artículos';
@@ -995,14 +1006,13 @@ function renderVender(){
   if(!sec().productos.length){ el.innerHTML='<div class="empty">Aún no hay tarifas.<br>Añádelas en la pestaña <b>Tarifas</b>.</div>'; return; }
   const gs=grupos(sec().productos).filter(g=>UI.filtro==='Todo'||g.k===UI.filtro);
   el.innerHTML=(m==='vy'?`<p class="vybox"><b>Pregunta al llegar si compraron la entrada en la web (Venteya).</b> Si es así, toca aquí su tipo de entrada, una vez por persona. Cuentan como visitantes y van en el cierre de Entradas, pero no se cobran ni entran en el dinero de la caja.</p>`:'')+(m==='vy'?'':`<p class="hint">Cobrando en <b>${NOMBRE[m].toLowerCase()}</b>. Toca ${D.pagina==='ent'?'una entrada por cada persona':D.pagina==='bar'?'cada consumición; abajo ves el pedido y el cambio':'un artículo cada vez que lo vendas'}. El botón − quita uno.</p>`)+
-    (m==='vy'?'':panelDescuento())+
     gs.map(g=>`<h3 class="cat">${esc(g.k)}</h3><div class="grid">`+g.ps.map(p=>{
       const c=cnt(m,p.id), any=m==='vy'?c:(c||cnt('ef',p.id)+cnt('tj',p.id));
       return `<div class="cell"><button class="tile${c?' on':''}" data-add="${p.id}" aria-label="Sumar ${esc(p.nombre)}">
         <span class="n">${esc(p.nombre)}</span><span class="p${p.precio?'':' free'}">${p.precio?eur(p.precio):'Gratuita'}</span>
         ${c?`<span class="badge">${c}</span>`:''}</button>
         ${any?`<button class="minus" data-sub="${p.id}" aria-label="Quitar uno de ${esc(p.nombre)}">−</button>`:''}</div>`;
-    }).join('')+'</div>').join('');
+    }).join('')+'</div>').join('')+(m==='vy'?'':panelDescuento());
 }
 /* ---------- descuento libre ---------- */
 const MOTIVOS=['Cliente habitual','Grupo o colectivo','Invitación de la casa','Producto con defecto','Error de cobro','Trabajador o voluntario'];
@@ -1092,7 +1102,8 @@ function renderCarta(){
     <div class="field catf"><label class="lbl" for="pCat">Sección</label><select id="pCat">${cats().map(c=>`<option>${c}</option>`).join('')}</select></div>
     <div class="field price"><label class="lbl" for="pPrecio">Precio €</label><input id="pPrecio" inputmode="decimal" placeholder="0 = gratis" required></div>
     <button class="btn" type="submit">Añadir</button></form>`;
-  h+=grupos(sec().productos).map(g=>`<h3>${esc(g.k)}</h3><div class="card">`+g.ps.map(p=>`<div class="row"><span class="grow">${esc(p.nombre)}</span><span class="s">${p.precio?eur(p.precio):'Gratuita'}</span><button class="x" data-del="${p.id}" aria-label="Quitar ${esc(p.nombre)}">${UI.borrarP===p.id?'¿Seguro? Sí, quitar':'Quitar'}</button></div>`).join('')+'</div>').join('');
+  h+=`<div class="edit-t"><button class="mini" data-act="editT" aria-pressed="${!!UI.editT}">${UI.editT?'Terminar de editar':'Editar tarifas'}</button></div>`;
+  h+=grupos(sec().productos).map(g=>`<h3>${esc(g.k)}</h3><div class="card">`+g.ps.map(p=>`<div class="row"><span class="grow">${esc(p.nombre)}</span><span class="s">${p.precio?eur(p.precio):'Gratuita'}</span>${UI.editT?`<button class="x" data-del="${p.id}" aria-label="Quitar ${esc(p.nombre)}">${UI.borrarP===p.id?'¿Seguro? Sí, quitar':'Quitar'}</button>`:''}</div>`).join('')+'</div>').join('');
   h+=bloqueEnvio();
   h+=`<h3>Copia de seguridad</h3><p class="small">Todo se guarda en este móvil, sin internet. Si borras los datos del navegador se pierde, así que de vez en cuando guarda una copia.${D.ultimaCopia?` Última copia: ${fmtF(D.ultimaCopia)}.`:' <b>Aún no has guardado ninguna copia.</b>'}</p>
     <div class="exp" style="margin-top:10px"><button class="btn" data-act="backup">Guardar copia</button><button class="btn" data-act="restore">Recuperar copia</button></div>`;
@@ -1112,7 +1123,7 @@ document.addEventListener('click',e=>{
   if(b.dataset.p){ D.pagina=b.dataset.p; UI.filtro='Todo'; UI.confirmar=false; UI.contado=''; save(); render(); window.scrollTo(0,0); return; }
   if(b.dataset.m){ D.metodo=b.dataset.m; save(); render(); return; }
   if(b.dataset.f){ UI.filtro=b.dataset.f; render(); return; }
-  if(b.dataset.v){ UI.view=b.dataset.v; UI.confirmar=false; render(); window.scrollTo(0,0); return; }
+  if(b.dataset.v){ UI.view=b.dataset.v; UI.confirmar=false; UI.editT=false; render(); window.scrollTo(0,0); return; }
   if(b.dataset.add){ const id=b.dataset.add, pr=sec().productos.find(x=>x.id===id), m=D.metodo, pag=D.pagina; sumar(id,1);
     if(pr) toast(`+1 ${pr.nombre}${m==='tj'?' · tarjeta':m==='vy'?' · Venteya':''}`,'Deshacer',()=>{ if(D.pagina!==pag) return toast('Para deshacer, vuelve a esa caja y usa el botón −'); const prev=D.metodo; D.metodo=m; sumar(id,-1); D.metodo=prev; save(); render(); toast('Deshecho: '+pr.nombre); });
     return; }
@@ -1129,6 +1140,7 @@ document.addEventListener('click',e=>{
   if(b.dataset.como){ UI.fv.como=b.dataset.como; render(); return; }  if(b.dataset.delv){ const id=b.dataset.delv; if(UI.borrarV===id){ D.sec.ent.visitas=D.sec.ent.visitas.filter(v=>v.id!==id); UI.borrarV=null; save(); toast('Visita quitada'); } else UI.borrarV=id; render(); return; }
   if(b.dataset.exp){ const k=b.dataset.k; const c=k==='actual'?cierreActual():sec().cierres[+k]; if(c) exportar(b.dataset.exp,c); return; }
   const a=b.dataset.act;
+  if(a==='editT'){ UI.editT=!UI.editT; UI.borrarP=null; render(); }
   if(a==='dscAbrir') abrirDescuento();
   if(a==='dscCancelar'){ UI.dsc=null; render(); }
   if(a==='dscAplicar') aplicarDescuento();
@@ -1136,7 +1148,7 @@ document.addEventListener('click',e=>{
   if(a==='cancelar'){UI.confirmar=false;render();}
   if(a==='cerrar') cerrarCaja();
   if(a==='guardarV') guardarVisita();
-  if(a==='cambio'){ UI.cambio=!UI.cambio; UI.entrega=''; renderTicket(); if(UI.cambio){ const i=document.getElementById('entrega'); if(i) i.focus(); } }
+  if(a==='cambio'){ UI.cambio=!UI.cambio; UI.entrega=''; renderTicket(); }
   if(a==='nuevoPed'||a==='cobrado'){ UI.ticket={}; UI.tkDesc=0; UI.cambio=false; UI.entrega=''; renderTicket(); if(a==='cobrado') toast('Cobrado'); }
   if(a==='semX'){ try{ const x=xlsxSemana(UI.semana); descargar(x.nombre,x.bytes,'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'); }catch(e){ toast('No se pudo crear el archivo'); } }
   if(a==='semShare') compartirSemana();
@@ -1190,7 +1202,7 @@ document.addEventListener('submit',e=>{
 });
 let tt, toastFn=null; function toast(m,accion,fn){const t=document.getElementById('toast');t.textContent=m;toastFn=null;
   if(accion&&fn){const b=document.createElement('button');b.type='button';b.textContent=accion;b.dataset.toast='1';t.appendChild(b);toastFn=fn;}
-  t.hidden=false;clearTimeout(tt);tt=setTimeout(()=>{t.hidden=true;toastFn=null;},accion?5000:2600);}
+  t.hidden=false;clearTimeout(tt);tt=setTimeout(()=>{t.hidden=true;toastFn=null;},accion?3500:2400);}
 
 (function conectarDesdeEnlace(){
   try{
