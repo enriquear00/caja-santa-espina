@@ -101,10 +101,14 @@ body.con-hoja{overflow:hidden}
 .seg button{border:0;border-radius:9px;padding:13px 6px;min-height:48px;font:700 17px var(--body);background:none;color:var(--muted);cursor:pointer}
 .seg button[aria-pressed="true"][data-m="ef"]{background:var(--accent);color:var(--accent-ink)}
 .seg button[aria-pressed="true"][data-m="tj"]{background:var(--card);color:var(--card-ink)}
-.seg.tres{grid-template-columns:1fr 1fr 1fr}
+.seg.tres{grid-template-columns:1fr 1fr 1fr} .seg.tres button{font-size:15px;padding:12px 4px}
 .seg button[aria-pressed="true"][data-m="vy"]{background:var(--vy);color:var(--vy-ink)}
 .m-vy .tile.on{border-color:var(--vy);background:var(--vy-soft)} .m-vy .badge{background:var(--vy);color:var(--vy-ink)}
 .dot.vy{background:var(--vy)}
+.ent-row{display:flex;gap:6px;align-items:stretch}.ent-row input{flex:1;min-width:0}
+.sep-btn{flex:none;border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:10px;padding:0 10px;font:700 15px var(--body);min-height:48px;cursor:pointer;white-space:nowrap}
+.form-v.editando{outline:2px solid var(--accent);outline-offset:2px}.edit-note{margin:0 0 10px;font-size:15px}
+.x[data-editv]{color:var(--accent)}.row2{display:flex;gap:8px}.row2 .btn{flex:1}.hacts{display:flex;gap:6px;flex:none}
 .vybox{background:var(--vy-soft);border:1px solid var(--vy-line);border-radius:12px;padding:12px 14px;font-size:15px;line-height:1.45;margin:10px 0}
 .chips{display:flex;gap:6px;overflow-x:auto;scrollbar-width:none}
 .chips::-webkit-scrollbar{display:none}
@@ -643,7 +647,7 @@ UI.fv=UI.fv||{entradas:'',personas:'',pTocado:false,ambito:'',lugar:'',como:''};
 function parseEntradas(txt){
   const t=String(txt||'').trim().replace(/[–—]/g,'-').replace(/\s+(?:a|al|hasta)\s+/gi,'-').replace(/\s*-\s*/g,'-');
   if(!t) return {nums:[],err:''};
-  const set=new Set(), toks=t.split(/\s*[,;\/]\s*|\s+y\s+|\s+/).filter(Boolean);
+  const set=new Set(), toks=t.split(/\s*[,;\/.+·]\s*|\s+y\s+|\s+/).filter(Boolean);
   for(const tok of toks){
     let m;
     if(/^\d+$/.test(tok)) set.add(+tok);
@@ -677,15 +681,15 @@ function barras(pares,total){
 }
 function previewEntradas(){
   const F=UI.fv, p=parseEntradas(F.entradas), box=document.getElementById('entPrev'); if(!box) return p;
-  const dup=p.err?null:duplicada(p.nums);
+  const dup=p.err?null:duplicada(p.nums,F.editId);
   box.className='small '+(p.err||dup?'bad':'');
-  box.textContent=p.err?p.err:dup?dup:p.nums.length?`${p.nums.length} ${p.nums.length===1?'entrada':'entradas'}: ${compactar(p.nums)}`:'Puedes dejarlo vacío si no tienen entrada numerada (por ejemplo, niños).';
+  box.textContent=p.err?p.err:dup?dup:p.nums.length?`${p.nums.length} ${p.nums.length===1?'entrada':'entradas'}: ${compactar(p.nums)}`:'Para un grupo, pon todas sus entradas separadas con «, otra» (125, 128, 131) o un intervalo con «– hasta» (125-130). Puedes dejarlo vacío si no tienen entrada numerada.';
   if(!F.pTocado){ F.personas=p.nums.length?String(p.nums.length):''; const pi=document.getElementById('vPers'); if(pi) pi.value=F.personas; }
   return p;
 }
-function duplicada(nums){
+function duplicada(nums,salvo){
   if(!nums.length) return '';
-  const ya=new Map(); todasVisitas().forEach(v=>(v.nums||[]).forEach(n=>ya.set(n,v)));
+  const ya=new Map(); todasVisitas().filter(v=>v.id!==salvo).forEach(v=>(v.nums||[]).forEach(n=>ya.set(n,v)));
   const rep=nums.filter(n=>ya.has(n));
   if(!rep.length) return '';
   const v=ya.get(rep[0]), f=new Date(v.hora).toLocaleString('es-ES',{day:'numeric',month:'numeric',hour:'2-digit',minute:'2-digit'});
@@ -694,15 +698,17 @@ function duplicada(nums){
 function guardarVisita(){
   const F=UI.fv, p=parseEntradas(F.entradas);
   if(p.err) return toast(p.err);
-  const dup=duplicada(p.nums); if(dup) return toast(dup);
+  const dup=duplicada(p.nums,F.editId); if(dup) return toast(dup);
   const per=parseInt(F.personas,10);
   if(!(per>0)) return toast('Indica cuántas personas son');
   if(!F.ambito) return toast('Elige de dónde vienen');
   if(!F.como) return toast('Elige cómo conocieron el monasterio');
   const s=D.sec.ent; s.visitas=s.visitas||[];
-  s.visitas.push({id:uid(),hora:Date.now(),entradas:compactar(p.nums),nums:p.nums,personas:per,ambito:F.ambito,lugar:(F.lugar||'').trim(),como:F.como});
+  const datos={entradas:compactar(p.nums),nums:p.nums,personas:per,ambito:F.ambito,lugar:(F.lugar||'').trim(),como:F.como};
+  const v=F.editId&&s.visitas.find(x=>x.id===F.editId);
+  if(v) Object.assign(v,datos,{editada:Date.now()}); else s.visitas.push(Object.assign({id:uid(),hora:Date.now()},datos));
   UI.fv={entradas:'',personas:'',pTocado:false,ambito:'',lugar:'',como:''};
-  save(); render(); toast(`Visita guardada: ${per} ${per===1?'persona':'personas'}`);
+  save(); render(); toast(v?'Visita corregida':`Visita guardada: ${per} ${per===1?'persona':'personas'}`);
   const e=document.getElementById('vEnt'); if(e) e.focus();
 }
 function lugarHTML(F){
@@ -716,15 +722,17 @@ function renderVisitas(t){
   const per=V.reduce((a,v)=>a+(+v.personas||0),0);
   let h=`<h2>Encuesta de visitantes</h2>
   <p class="small" style="margin:-6px 0 12px">Apunta cada grupo al venderle las entradas. Registradas en este turno: <b>${per}</b> de <b>${t.uds+t.vy}</b> entradas${t.vy?` (${t.vy} de Venteya)`:''}.${t.uds+t.vy>per?` Faltan ${t.uds+t.vy-per} por registrar.`:''}</p>
-  <div class="card form-v">
+  <div class="card form-v${F.editId?' editando':''}">
+    ${F.editId?`<p class="edit-note"><b>Corrigiendo una visita</b> · cambia lo que haga falta y pulsa «Guardar cambios».</p>`:''}
     <div class="field"><label class="lbl" for="vEnt">Números de entrada</label>
-      <input id="vEnt" inputmode="numeric" value="${esc(F.entradas)}" placeholder="125   ·   125-130   ·   125, 128-131" autocomplete="off">
+      <div class="ent-row"><input id="vEnt" inputmode="numeric" value="${esc(F.entradas)}" placeholder="125, 128, 131-135" autocomplete="off">
+      <button type="button" class="sep-btn" data-sep=", " aria-label="Añadir otra entrada (coma)">, otra</button><button type="button" class="sep-btn" data-sep="-" aria-label="Hasta (intervalo)">– hasta</button></div>
       <span id="entPrev" class="small"></span></div>
     <div class="field" style="max-width:150px"><label class="lbl" for="vPers">Personas</label><input id="vPers" inputmode="numeric" value="${esc(F.personas)}" placeholder="0"></div>
     <div class="field"><span class="lbl">¿De dónde vienen?</span><div class="opts">${Object.entries(AMB).map(([k,v])=>`<button type="button" data-amb="${k}" aria-pressed="${F.ambito===k}">${v}</button>`).join('')}</div></div>
     <div id="lugarBox">${lugarHTML(F)}</div>
     <div class="field"><span class="lbl">¿Cómo conocieron el monasterio?</span><div class="opts">${COMO.map(x=>`<button type="button" data-como="${esc(x)}" aria-pressed="${F.como===x}">${esc(x)}</button>`).join('')}</div></div>
-    <button class="btn" data-act="guardarV">Guardar visita</button>
+    ${F.editId?`<div class="row2"><button class="btn" data-act="guardarV">Guardar cambios</button><button class="btn ghost" data-act="cancelarV">Cancelar</button></div>`:`<button class="btn" data-act="guardarV">Guardar visita</button>`}
   </div>`;
   const hoy=V.slice().reverse();
   h+=`<h3>Este turno</h3>`;
@@ -733,7 +741,7 @@ function renderVisitas(t){
     const hr=new Date(v.hora).toLocaleTimeString('es-ES',{hour:'2-digit',minute:'2-digit'});
     const lug=v.lugar?`${esc(v.lugar)} · `:'';
     return `<div class="hrow"><span class="grow"><b>${hr}</b> · ${v.personas} ${v.personas===1?'persona':'personas'}${v.entradas?` · Entradas ${esc(v.entradas)}`:''}<br><span class="small">${lug}${esc(AMB[v.ambito]||'')} · ${esc(v.como)}</span></span>
-      <button class="x" data-delv="${v.id}">${UI.borrarV===v.id?'¿Seguro?':'Quitar'}</button></div>`;}).join('')+'</div>';
+      <span class="hacts"><button class="x" data-editv="${v.id}">${UI.fv.editId===v.id?'Editando':'Editar'}</button><button class="x" data-delv="${v.id}">${UI.borrarV===v.id?'¿Seguro?':'Quitar'}</button></span></div>`;}).join('')+'</div>';
   if(V.length){
     h+=`<h3>Procedencia (personas)</h3>`+barras(cuenta(V,v=>AMB[v.ambito]).sort((a,b)=>ambitoOrden(a[0])-ambitoOrden(b[0])),per);
     h+=`<h3>Cómo nos conocieron (personas)</h3>`+barras(cuenta(V,v=>v.como),per);  }
@@ -830,7 +838,7 @@ function renderCesta(el){
   const secs=[['ent','Entradas'],['vy','Entradas Venteya'],['tie','Tienda'],['bar','Bar']];
   let G={ef:0,tj:0}, h=`<div class="home-in pad"><div class="secbar"><button class="back" data-cesta="0">‹ Inicio</button><span class="secname">Resumen del turno</span></div>
     <p class="small" style="margin:0">Lo vendido en los turnos abiertos ahora mismo, sin contar lo ya cerrado. Solo para consultar: no cambia nada.</p>`;
-  secs.filter(([k])=>!UI.gestor||GESTORES[UI.gestor].secs.includes(k)).forEach(([k,nom])=>{
+  secs.filter(([k])=>!UI.gestor||GESTORES[UI.gestor].ces.includes(k)).forEach(([k,nom])=>{
     const L=lineasDe(k), dd=k==='vy'?{ef:0,tj:0,lista:[]}:descDe(D.sec[k]), ef=r2(L.reduce((a,x)=>a+x.precio*x.ef,0)-dd.ef), tj=r2(L.reduce((a,x)=>a+x.precio*x.tj,0)-dd.tj), u=L.reduce((a,x)=>a+x.cant,0), imp=r2(L.reduce((a,x)=>a+x.importe,0));
     if(k!=='vy'){ G.ef+=ef; G.tj+=tj; }
     const desde=k==='vy'?D.sec.ent.inicio:D.sec[k].inicio;
@@ -846,7 +854,7 @@ function renderCesta(el){
     <p class="small home-note">El total no incluye las entradas Venteya, que ya están pagadas online.</p></div>`;
   el.innerHTML=h;
 }
-const GESTORES={fes:{nom:'FES',secs:['ent','vy','tie','bar'],sub:'Entradas, Entradas Venteya, Tienda y Bar'},ayto:{nom:'Ayuntamiento',secs:['ent','vy','tie'],sub:'Entradas, Entradas Venteya y Tienda'}};
+const GESTORES={fes:{nom:'FES',secs:['ent','tie','bar'],ces:['ent','vy','tie','bar'],sub:'Entradas (con las de la web), Tienda y Bar'},ayto:{nom:'Ayuntamiento',secs:['ent','tie'],ces:['ent','vy','tie'],sub:'Entradas (con las de la web) y Tienda'}};
 UI.gestor=null;
 function renderGestor(el){
   el.innerHTML=`<div class="home-in pad">
@@ -861,8 +869,9 @@ function renderHome(){
   if(UI.cesta) return renderCesta(el);
   const G=GESTORES[UI.gestor];
   const sub=k=>{ if(k==='vy'){ const n=Object.values(D.sec.ent.counts.vy||{}).reduce((a,b)=>a+b,0); return n?`Turno abierto: <b>${n}</b> ${n===1?'entrada':'entradas'} compradas online`:'Compradas online · se apuntan al llegar'; }
+    const nvy=k==='ent'?Object.values(D.sec.ent.counts.vy||{}).reduce((x,y)=>x+y,0):0;
     const s=D.sec[k], l=s.productos.filter(p=>(s.counts.ef[p.id]||0)+(s.counts.tj[p.id]||0)).map(p=>({precio:p.precio,ef:s.counts.ef[p.id]||0,tj:s.counts.tj[p.id]||0,cant:(s.counts.ef[p.id]||0)+(s.counts.tj[p.id]||0)}));
-    const R=conDesc(resumen(l),s); return R.uds?`${turnoViejo(s)?'<b class="bad">Sin cerrar desde '+new Date(s.inicio).toLocaleDateString('es-ES',{weekday:'long',day:'numeric'})+'</b> · ':''}Turno abierto: <b>${eur(R.total)}</b> · ${R.uds} ${k==='ent'?(R.uds===1?'entrada':'entradas'):k==='bar'?(R.uds===1?'consumición':'consumiciones'):(R.uds===1?'artículo':'artículos')}`:'Sin ventas en este turno'; };
+    const R=conDesc(resumen(l),s); return R.uds?`${turnoViejo(s)?'<b class="bad">Sin cerrar desde '+new Date(s.inicio).toLocaleDateString('es-ES',{weekday:'long',day:'numeric'})+'</b> · ':''}Turno abierto: <b>${eur(R.total)}</b> · ${R.uds} ${k==='ent'?(R.uds===1?'entrada':'entradas'):k==='bar'?(R.uds===1?'consumición':'consumiciones'):(R.uds===1?'artículo':'artículos')}${nvy?` · ${nvy} de la web`:''}`:nvy?`Turno abierto: ${nvy} ${nvy===1?'entrada':'entradas'} de la web`:'Sin ventas en este turno'; };
   const ico={ent:'<path d="M3 7h18v3a2 2 0 0 0 0 4v3H3v-3a2 2 0 0 0 0-4z"/><path d="M14 7v10" stroke-dasharray="2 2"/>',
     tie:'<path d="M5 8h14l-1 12H6z"/><path d="M9 8a3 3 0 0 1 6 0"/>',
     bar:'<path d="M5 9h11v5a5 5 0 0 1-5 5h-1a5 5 0 0 1-5-5z"/><path d="M16 10h1.5a2.5 2.5 0 0 1 0 5H16"/><path d="M8 3c0 1.5 1 1.5 1 3M11 3c0 1.5 1 1.5 1 3"/>',
@@ -873,7 +882,7 @@ function renderHome(){
     <h1>¿Qué caja vas a llevar?</h1>
     <div class="home-btns">${G.secs.map(k=>`<button class="hb hb-${k}" data-open="${k}"><span class="hb-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${ico[k]}</svg></span><span class="hb-t"><b>${NOMSEC[k]}</b><span>${sub(k)}</span></span><span class="hb-go" aria-hidden="true">›</span></button>`).join('')}</div>
     <button class="cesta-btn" data-cesta="1"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 9h18l-2 11H5z"/><path d="M8 9l3-6M16 9l-3-6"/><path d="M9 13v4M15 13v4M12 13v4"/></svg><span class="grow">Resumen del turno<br><span class="small">Lo vendido ahora en ${UI.gestor==='ayto'?'entradas, Venteya y tienda':'entradas, Venteya, tienda y bar'}</span></span><span class="hb-go" aria-hidden="true">›</span></button>
-    <p class="small home-note">Cada caja es independiente: sus ventas, cierres y tarifas no se mezclan. Las entradas Venteya se cierran junto con la caja de Entradas.</p>
+    <p class="small home-note">Cada caja es independiente: sus ventas, cierres y tarifas no se mezclan. Las entradas compradas en la web (Venteya) se apuntan dentro de Entradas, con el botón «Venteya» junto a Efectivo y Tarjeta.</p>
     <details class="obs" ${UI.obsAbierto?'open':''}><summary>Sugerencias y observaciones <span aria-hidden="true">›</span></summary>
       <p class="small" style="margin:0 0 12px">¿Algo que cambiar o mejorar en la app, o algún fallo? Escríbelo aquí y le llega por correo a c.pardo@educatioservanda.org.</p>
       <div class="field"><label class="lbl" for="obsTipo">Tipo</label><select id="obsTipo">${['Cambio o mejora','Algo no funciona','Otra observación'].map(x=>`<option${UI.obs.tipo===x?' selected':''}>${x}</option>`).join('')}</select></div>
@@ -1032,7 +1041,7 @@ setInterval(enviarCola,60000);
 /* ================= vistas ================= */
 function grupos(ps){ const g=[]; ps.forEach(p=>{const k=p.cat||'Otros'; let x=g.find(y=>y.k===k); if(!x){x={k,ps:[]};g.push(x);} x.ps.push(p);}); return g.sort((a,b)=>catOrd(a.k)-catOrd(b.k)); }
 function render(){
-  if(UI.home) UI.soloVy=false; if(UI.soloVy){ D.metodo='vy'; UI.view='Vender'; } else if(D.metodo==='vy') D.metodo='ef';
+  if(UI.home) UI.soloVy=false; if(UI.soloVy){ D.metodo='vy'; UI.view='Vender'; } else if(D.metodo==='vy'&&D.pagina!=='ent') D.metodo='ef';
   document.body.classList.toggle('s-tie',!UI.home&&D.pagina==='tie'); document.body.classList.toggle('s-bar',!UI.home&&D.pagina==='bar'); document.body.classList.toggle('s-vy',!UI.home&&!!UI.soloVy);
   document.getElementById('home').hidden=!UI.home; document.getElementById('appSec').hidden=UI.home;
   if(UI.home){ renderHome(); renderTicket(); return; }
@@ -1040,7 +1049,7 @@ function render(){
   document.getElementById('secName').textContent=UI.soloVy?'Entradas Venteya':NOMSEC[D.pagina];
   pintarTotales(t);
   if(!esEnt&&D.metodo==='vy') D.metodo='ef';
-  document.querySelector('#seg [data-m="vy"]').hidden=true; document.getElementById('seg').classList.remove('tres');
+  document.querySelector('#seg [data-m="vy"]').hidden=!esEnt; document.getElementById('seg').classList.toggle('tres',esEnt);
   const vend=UI.view==='Vender';
   document.getElementById('seg').hidden=!vend||!!UI.soloVy;
   document.querySelectorAll('#seg button').forEach(b=>b.setAttribute('aria-pressed',b.dataset.m===D.metodo));
@@ -1227,7 +1236,9 @@ document.addEventListener('click',e=>{
   if(b.dataset.toast){ const f=toastFn; document.getElementById('toast').classList.add('fuera'); toastFn=null; if(f) f(); return; }
   if(b.dataset.amb||b.dataset.como){ b.closest('.opts').querySelectorAll('button').forEach(x=>x.setAttribute('aria-pressed',x===b)); }
   if(b.dataset.amb){ if(UI.fv.ambito!==b.dataset.amb){ UI.fv.ambito=b.dataset.amb; UI.fv.lugar=''; document.getElementById('lugarBox').innerHTML=lugarHTML(UI.fv); } return; }
-  if(b.dataset.como){ UI.fv.como=b.dataset.como; return; }  if(b.dataset.delv){ const id=b.dataset.delv; if(UI.borrarV===id){ D.sec.ent.visitas=D.sec.ent.visitas.filter(v=>v.id!==id); UI.borrarV=null; save(); toast('Visita quitada'); } else UI.borrarV=id; render(); return; }
+  if(b.dataset.como){ UI.fv.como=b.dataset.como; return; }
+  if(b.dataset.sep){ const i=document.getElementById('vEnt'); if(i){ const v=i.value.replace(/[\s,\-]+$/,''); if(v){ i.value=v+b.dataset.sep; UI.fv.entradas=i.value; previewEntradas(); } i.focus(); } return; }
+  if(b.dataset.editv){ const v=(D.sec.ent.visitas||[]).find(x=>x.id===b.dataset.editv); if(v){ UI.fv={editId:v.id,entradas:v.entradas||'',personas:String(v.personas||''),pTocado:true,ambito:v.ambito||'',lugar:v.lugar||'',como:v.como||''}; UI.borrarV=null; render(); window.scrollTo({top:0,behavior:'smooth'}); } return; }  if(b.dataset.delv){ const id=b.dataset.delv; if(UI.borrarV===id){ D.sec.ent.visitas=D.sec.ent.visitas.filter(v=>v.id!==id); UI.borrarV=null; if(UI.fv.editId===id) UI.fv={entradas:'',personas:'',pTocado:false,ambito:'',lugar:'',como:''}; save(); toast('Visita quitada'); } else UI.borrarV=id; render(); return; }
   if(b.dataset.exp){ const k=b.dataset.k; const c=k==='actual'?cierreActual():sec().cierres[+k]; if(c) exportar(b.dataset.exp,c); return; }
   const a=b.dataset.act;
   if(a==='editT'){ UI.editT=!UI.editT; UI.borrarP=null; render(); }
@@ -1236,6 +1247,7 @@ document.addEventListener('click',e=>{
   if(a==='dscAplicar') aplicarDescuento();
   if(a==='confirmar') pedirCierre();
   if(a==='guardarV') guardarVisita();
+  if(a==='cancelarV'){ UI.fv={entradas:'',personas:'',pTocado:false,ambito:'',lugar:'',como:''}; render(); }
   if(a==='cambio'){ UI.cambio=!UI.cambio; UI.entrega=''; renderTicket(); if(UI.cambio) entrar(document.getElementById('ticket')); }
   if(a==='nuevoPed'||a==='cobrado'){ UI.ticket={}; UI.tkDesc=0; UI.cambio=false; UI.entrega=''; renderTicket(); if(a==='cobrado') toast('Cobrado'); }
   if(a==='semX'){ try{ const x=xlsxSemana(UI.semana); descargar(x.nombre,x.bytes,'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'); }catch(e){ toast('No se pudo crear el archivo'); } }
