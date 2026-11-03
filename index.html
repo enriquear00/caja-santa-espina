@@ -108,7 +108,7 @@ body.con-hoja{overflow:hidden}
 .ent-row{display:flex;gap:6px;align-items:stretch}.ent-row input{flex:1;min-width:0}
 .sep-btn{flex:none;border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:10px;padding:0 10px;font:700 15px var(--body);min-height:48px;cursor:pointer;white-space:nowrap}
 .form-v.editando{outline:2px solid var(--accent);outline-offset:2px}.edit-note{margin:0 0 10px;font-size:15px}
-.x[data-editv]{color:var(--accent)}.row2{display:flex;gap:8px}.row2 .btn{flex:1}.hacts{display:flex;gap:6px;flex:none}
+.x[data-editv]{color:var(--accent)}.desc-box.dir{border-color:var(--gold)}.row2{display:flex;gap:8px}.row2 .btn{flex:1}.hacts{display:flex;gap:6px;flex:none}
 .vybox{background:var(--vy-soft);border:1px solid var(--vy-line);border-radius:12px;padding:12px 14px;font-size:15px;line-height:1.45;margin:10px 0}
 .chips{display:flex;gap:6px;overflow-x:auto;scrollbar-width:none}
 .chips::-webkit-scrollbar{display:none}
@@ -435,7 +435,7 @@ const esEntC=()=>D.pagina==='ent';
 function cierreActual(){
   const t=totales(), s=sec();
   const c = UI.contado.trim()==='' ? null : num(UI.contado);
-  return {id:uid()+uid(),pagina:D.pagina,gestor:UI.gestor?GESTORES[UI.gestor].nom:'',fecha:Date.now(),inicio:s.inicio,total:t.total,efectivo:t.tEf,tarjeta:t.tTj,unidades:t.uds,venteya:esEntC()?{uds:t.vy,importe:t.tVy}:undefined,lineas:t.l,contado:(c==null||isNaN(c))?null:c,franjas:franjasDe(s,t),visitas:D.pagina==='ent'?(s.visitas||[]).slice():undefined,descuentos:(s.descuentos||[]).length?s.descuentos.slice():undefined,bruto:t.bruto};
+  return {id:uid()+uid(),pagina:D.pagina,gestor:UI.gestor?GESTORES[UI.gestor].nom:'',fecha:Date.now(),inicio:s.inicio,total:t.total,efectivo:t.tEf,tarjeta:t.tTj,unidades:t.uds,venteya:esEntC()?{uds:t.vy,importe:t.tVy}:undefined,lineas:t.l,contado:(c==null||isNaN(c))?null:c,franjas:franjasDe(s,t),visitas:D.pagina==='ent'?(s.visitas||[]).slice():undefined,descuentos:(s.descuentos||[]).length?s.descuentos.slice():undefined,director:r2((s.descuentos||[]).filter(d=>d.cargo==='dir').reduce((a,d)=>a+d.importe,0))||undefined,bruto:t.bruto};
 }
 function cerrarCaja(){
   const c=cierreActual(), s=sec();
@@ -528,13 +528,14 @@ function pdfDe(c){
     P.text(X.imp,y,nf(x.subtotal)+' €',{size:9.5,align:'right'});
     P.line(M,y+5,W-M,y+5); y+=17;
   });
-  if(c.descuentos&&c.descuentos.length){ salto(36); y+=4; P.text(M,y,'DESCUENTOS',{size:8,bold:true,color:wine}); y+=15;
-    c.descuentos.forEach(d=>{ salto(17); P.text(M,y,fit(d.motivo+' ('+(d.tipo==='pct'?nf(d.valor).replace(/,00$/,'')+' % de '+nf(d.base)+' €':'importe fijo')+')',9.5,false,X.pvp-M+40),{size:9.5});
+  if(c.descuentos&&c.descuentos.length){ salto(36); y+=4; P.text(M,y,c.descuentos.some(d=>d.cargo==='dir')?'DESCUENTOS Y CARGOS AL DIRECTOR':'DESCUENTOS',{size:8,bold:true,color:wine}); y+=15;
+    c.descuentos.forEach(d=>{ salto(17); P.text(M,y,fit((d.cargo==='dir'?'A cargo del director: ':'')+d.motivo+' ('+(d.tipo==='pct'?nf(d.valor).replace(/,00$/,'')+' % de '+nf(d.base)+' €':'importe fijo')+')',9.5,false,X.pvp-M+40),{size:9.5});
       P.text(d.metodo==='ef'?X.ef:X.tj,y,d.metodo==='ef'?'efec.':'tarj.',{size:9.5,align:'right',color:grey});
       P.text(X.imp,y,'−'+nf(d.importe)+' €',{size:9.5,align:'right',color:[164,70,42]}); P.line(M,y+5,W-M,y+5); y+=17; }); }
   salto(40); y+=4; P.line(M,y-8,W-M,y-8,wine,1.2); y+=6;
   P.text(M,y,'Total',{size:12,bold:true}); P.text(X.uds,y,String(c.unidades!=null?c.unidades:R.uds),{size:12,bold:true,align:'right'});
   P.text(X.imp,y,nf(c.total)+' €',{size:12,bold:true,align:'right'}); y+=26;
+  if(c.director){ salto(20); P.text(M,y,'A cargo del director: '+nf(c.director)+' €',{size:10,bold:true,color:wine}); P.text(W-M,y,'no cobrado en caja, se le carga a él',{size:10,align:'right',color:grey}); y+=18; }
   if(c.venteya&&c.venteya.uds){ salto(20); P.text(M,y,'Entradas Venteya (pagadas online): '+c.venteya.uds,{size:10,bold:true,color:[15,157,128]}); P.text(W-M,y,nf(c.venteya.importe)+' € · no entran en la caja',{size:10,align:'right',color:grey}); y+=18; }
   if(c.contado!=null){ salto(20); const d=r2(c.contado-c.efectivo);
     P.text(M,y,'Efectivo contado en caja: '+nf(c.contado)+' €',{size:10});
@@ -609,7 +610,7 @@ function xlsxDe(c){
     S(r,'F',x.cant,0,`D${r}+E${r}`); S(r,'G',r2(x.precio*x.ef),2,`C${r}*D${r}`); S(r,'H',r2(x.precio*x.tj),2,`C${r}*E${r}`); S(r,'I',x.subtotal,3,`C${r}*F${r}`); });
   const DS=c.descuentos||[];
   DS.forEach((d,i)=>{ const r=first+L.length+i, im=-d.importe;
-    S(r,'A','Descuento',6); S(r,'B',d.motivo+(d.tipo==='pct'?` (${nf(d.valor).replace(/,00$/,'')} % de ${nf(d.base)} €)`:''));
+    S(r,'A',d.cargo==='dir'?'Director':'Descuento',6); S(r,'B',(d.cargo==='dir'?'A cargo del director: ':'')+d.motivo+(d.tipo==='pct'?` (${nf(d.valor).replace(/,00$/,'')} % de ${nf(d.base)} €)`:''));
     if(d.metodo==='ef'){ S(r,'G',im,2); S(r,'H',0,2); } else { S(r,'G',0,2); S(r,'H',im,2); } S(r,'I',im,3,`G${r}+H${r}`); });
   const nF=L.length+DS.length, last=first+nF-1, tr=Math.max(last+1,first);
   const R=conDesc(resumen(L),{descuentos:DS}), sm=(col,v,s)=>S(tr,col,v,s,nF?`SUM(${col}${first}:${col}${last})`:null);
@@ -618,6 +619,7 @@ function xlsxDe(c){
   const vyU=c.venteya?c.venteya.uds:0;
   if(esEnt&&vyU){ S(r,'A','Entradas Venteya (pagadas online, no entran en caja)',1); S(r,'C',vyU,1); S(r,'D',c.venteya.importe,3); r++;
     LT.filter(x=>x.vy).forEach(x=>{ S(r,'B','   '+x.nombre); S(r,'C',x.vy); r++; }); }
+  if(c.director){ S(r,'A','A cargo del director (no cobrado en caja)',1); S(r,'C',c.director,2); r++; }
   if(esEnt){ S(r,'A','Visitantes',1); S(r,'C',R.uds+vyU,1,vyU?null:`F${tr}`); r++; }
   if(c.contado!=null){ S(r,'A','Efectivo contado en caja',1); S(r,'C',c.contado,2); r++;
     S(r,'A','Diferencia (contado − ventas en efectivo)',1); S(r,'C',r2(c.contado-R.tEf),3,`C${r-1}-G${tr}`); r++; }
@@ -955,8 +957,10 @@ function xlsxPeriodo(k,L,titulo,sub,nombre){
   T(1,'A','Productos vendidos',4); T(2,'A',sub,7);
   ['Sección','Producto','PVP','Uds efectivo','Uds tarjeta','Unidades','Importe'].concat(esEnt?['Uds Venteya (online)']:[]).forEach((h,i)=>T(4,'ABCDEFGH'[i],h,5));
   P.forEach((x,i)=>{ const r=5+i; T(r,'A',x.cat,6); T(r,'B',x.nombre); T(r,'C',x.precio,2); T(r,'D',x.ef); T(r,'E',x.tj); T(r,'F',x.ef+x.tj,0,`D${r}+E${r}`); T(r,'G',r2(x.precio*(x.ef+x.tj)),2,`C${r}*F${r}`); if(esEnt) T(r,'H',x.vy); });
-  const DT=L.reduce((a,c)=>a+(c.descuentos||[]).reduce((b,d)=>b+d.importe,0),0);
-  if(DT){ const r=5+P.length; T(r,'A','Descuentos',6); T(r,'B','Descuentos aplicados ('+L.reduce((a,c)=>a+(c.descuentos||[]).length,0)+')'); T(r,'G',-r2(DT),2); P.push(null); }
+  const DSA=[].concat(...L.map(c=>c.descuentos||[])), DSd=DSA.filter(d=>d.cargo!=='dir'), DSr=DSA.filter(d=>d.cargo==='dir');
+  const DT=DSd.reduce((b,d)=>b+d.importe,0), DR=DSr.reduce((b,d)=>b+d.importe,0);
+  if(DT){ const r=5+P.length; T(r,'A','Descuentos',6); T(r,'B','Descuentos aplicados ('+DSd.length+')'); T(r,'G',-r2(DT),2); P.push(null); }
+  if(DR){ const r=5+P.length; T(r,'A','Director',6); T(r,'B','A cargo del director ('+DSr.length+')'); T(r,'G',-r2(DR),2); P.push(null); }
   const pl=4+P.length, pt=pl+1;
   T(pt,'A','TOTAL',1); if(P.length){ const PP=P.filter(Boolean); T(pt,'F',PP.reduce((a,x)=>a+x.ef+x.tj,0),1,`SUM(F5:F${pl})`); T(pt,'G',r2(PP.reduce((a,x)=>a+x.precio*(x.ef+x.tj),0)-DT),3,`SUM(G5:G${pl})`); }
   const cols2='<col min="1" max="1" width="18" customWidth="1"/><col min="2" max="2" width="34" customWidth="1"/><col min="3" max="7" width="12" customWidth="1"/>';
@@ -1083,7 +1087,7 @@ function renderVender(){
 }
 /* ---------- descuento libre ---------- */
 const MOTIVOS=['Cliente habitual','Grupo o colectivo','Invitación de la casa','Producto con defecto','Error de cobro','Trabajador o voluntario'];
-function abrirDescuento(){ const tk=D.pagina==='bar'?ticketInfo():null; UI.dsc={motivo:'',tipo:'eur',valor:'',base:tk&&tk.n?nf(tk.tot):'',metodo:D.metodo==='tj'?'tj':'ef'}; render(); setTimeout(()=>{ const i=document.getElementById('dscMot'); if(i) i.focus(); },50); }
+function abrirDescuento(){ const tk=D.pagina==='bar'?ticketInfo():null; UI.dsc={motivo:'',tipo:'eur',valor:'',base:tk&&tk.n?nf(tk.tot):'',metodo:D.metodo==='tj'?'tj':'ef',cargo:''}; render(); setTimeout(()=>{ const i=document.getElementById('dscMot'); if(i) i.focus(); },50); }
 function calcDescuento(){
   const F=UI.dsc, v=num(F.valor), b=num(F.base);
   if(isNaN(v)||v<=0) return {err:'Escribe la cantidad del descuento.'};
@@ -1091,37 +1095,42 @@ function calcDescuento(){
   return {importe:r2(v),valor:v,base:null};
 }
 function maxDescuento(m){ const t=totales(); return m==='ef'?t.tEf:t.tTj; }
+const ETQ_DSC=d=>d&&d.cargo==='dir'?'A cargo del director':'Descuento';
 function textoDescuento(){
   const F=UI.dsc; if(!F) return ''; const c=calcDescuento();
   if(c.err) return `<span class="small">${F.valor===''?'Elige € o % y escribe la cantidad.':c.err}</span>`;
   const mx=maxDescuento(F.metodo);
   if(c.importe>mx+0.001) return `<span class="small bad">No puede ser mayor que lo cobrado en ${F.metodo==='ef'?'efectivo':'tarjeta'} en este turno (${eur(mx)}). Primero marca la venta.</span>`;
-  return `Descuento: <b>−${eur(c.importe)}</b>${F.tipo==='pct'?` <span class="small">(${nf(c.valor).replace(/,00$/,'')} % de ${eur(c.base)})</span>`:''}`;
+  return `${ETQ_DSC(F)}: <b>−${eur(c.importe)}</b>${F.tipo==='pct'?` <span class="small">(${nf(c.valor).replace(/,00$/,'')} % de ${eur(c.base)})</span>`:''}`;
 }
 function panelDescuento(){
   const F=UI.dsc;
-  if(!F) return `<button class="desc-btn" data-act="dscAbrir"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M19 5 5 19"/><circle cx="7" cy="7" r="2.5"/><circle cx="17" cy="17" r="2.5"/></svg>Hacer un descuento</button>`;
-  return `<div class="desc-box"><h3>Descuento</h3>
-    <div class="field"><label class="lbl" for="dscMot">Motivo</label><input id="dscMot" list="dlMot" value="${esc(F.motivo)}" placeholder="Ej. Cliente habitual" autocomplete="off" maxlength="80"><datalist id="dlMot">${MOTIVOS.map(x=>`<option value="${esc(x)}">`).join('')}</datalist></div>
+  if(!F) return `<button class="desc-btn" data-act="dscAbrir"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M19 5 5 19"/><circle cx="7" cy="7" r="2.5"/><circle cx="17" cy="17" r="2.5"/></svg>Descuento o cargo al director</button>`;
+  const dir=F.cargo==='dir';
+  return `<div class="desc-box${dir?' dir':''}"><h3>${dir?'Cargo al director':'Descuento'}</h3>
+    <div class="field"><span class="lbl">¿Quién lo paga?</span><div class="opts"><button type="button" data-dsccargo="" aria-pressed="${!dir}">Descuento (lo asume la caja)</button><button type="button" data-dsccargo="dir" aria-pressed="${dir}">A cargo del director</button></div>
+    ${dir?'<p class="small" style="margin:6px 0 0">El cliente no paga esta cantidad: se apunta a cuenta del director y sale aparte en el cierre. Para cargarle la cuenta entera, elige «Porcentaje» y pon 100.</p>':''}</div>
+    <div class="field"><label class="lbl" for="dscMot">${dir?'Concepto (para quién o por qué)':'Motivo'}</label><input id="dscMot" list="dlMot" value="${esc(F.motivo)}" placeholder="${dir?'Ej. Invitados del director':'Ej. Cliente habitual'}" autocomplete="off" maxlength="80"><datalist id="dlMot">${MOTIVOS.map(x=>`<option value="${esc(x)}">`).join('')}</datalist></div>
     <div class="field"><span class="lbl">Tipo de descuento</span><div class="opts"><button type="button" data-dsctipo="eur" aria-pressed="${F.tipo==='eur'}">En euros (€)</button><button type="button" data-dsctipo="pct" aria-pressed="${F.tipo==='pct'}">Porcentaje (%)</button></div></div>
-    <div class="field"><label class="lbl" for="dscVal">${F.tipo==='pct'?'Porcentaje (%)':'Cantidad a descontar (€)'}</label><input id="dscVal" inputmode="decimal" value="${esc(F.valor)}" placeholder="${F.tipo==='pct'?'Ej. 10':'Ej. 2,50'}" autocomplete="off"></div>
+    <div class="field"><label class="lbl" for="dscVal">${F.tipo==='pct'?'Porcentaje (%)':dir?'Cantidad a cargo del director (€)':'Cantidad a descontar (€)'}</label><input id="dscVal" inputmode="decimal" value="${esc(F.valor)}" placeholder="${F.tipo==='pct'?'Ej. 10':'Ej. 2,50'}" autocomplete="off"></div>
     ${F.tipo==='pct'?`<div class="field"><label class="lbl" for="dscBase">Importe de la cuenta (€)</label><input id="dscBase" inputmode="decimal" value="${esc(F.base)}" placeholder="Ej. 24,00" autocomplete="off"></div>`:''}
-    <div class="field"><span class="lbl">Se descuenta de lo cobrado en</span><div class="opts"><button type="button" data-dscmet="ef" aria-pressed="${F.metodo==='ef'}">Efectivo</button><button type="button" data-dscmet="tj" aria-pressed="${F.metodo==='tj'}">Tarjeta</button></div></div>
+    <div class="field"><span class="lbl">${dir?'La venta se marcó en':'Se descuenta de lo cobrado en'}</span><div class="opts"><button type="button" data-dscmet="ef" aria-pressed="${F.metodo==='ef'}">Efectivo</button><button type="button" data-dscmet="tj" aria-pressed="${F.metodo==='tj'}">Tarjeta</button></div></div>
     <p class="desc-res" id="dscRes">${textoDescuento()}</p>
-    <button class="btn" data-act="dscAplicar">Aplicar descuento</button><button class="btn ghost" data-act="dscCancelar" style="margin-top:8px">Cancelar</button></div>`;
+    <button class="btn" data-act="dscAplicar">${dir?'Cargar al director':'Aplicar descuento'}</button><button class="btn ghost" data-act="dscCancelar" style="margin-top:8px">Cancelar</button></div>`;
 }
 function aplicarDescuento(){
-  const F=UI.dsc, mot=(F.motivo||'').trim(); if(!mot) return toast('Escribe el motivo del descuento');
+  const F=UI.dsc, mot=(F.motivo||'').trim(); if(!mot) return toast(F.cargo==='dir'?'Escribe el concepto del cargo':'Escribe el motivo del descuento');
   const c=calcDescuento(); if(c.err) return toast(c.err);
   const mx=maxDescuento(F.metodo); if(c.importe>mx+0.001) return toast(`No puede pasar de ${eur(mx)} (lo cobrado en ${F.metodo==='ef'?'efectivo':'tarjeta'})`);
   const s=sec(), d={id:uid(),hora:Date.now(),h:new Date().getHours(),motivo:mot.slice(0,80),tipo:F.tipo,valor:c.valor,base:c.base,importe:c.importe,metodo:F.metodo};
+  if(F.cargo==='dir') d.cargo='dir';
   s.descuentos=s.descuentos||[]; s.descuentos.push(d);
   if(D.pagina==='bar'&&Object.keys(UI.ticket).length) UI.tkDesc=r2((UI.tkDesc||0)+d.importe);
   UI.dsc=null; save(); render(); const pag=D.pagina;
-  toast(`Descuento −${eur(d.importe)} (${d.motivo})`,'Deshacer',()=>quitarDescuento(pag,d.id));
+  toast(`${ETQ_DSC(d)} −${eur(d.importe)} (${d.motivo})`,'Deshacer',()=>quitarDescuento(pag,d.id));
 }
 function quitarDescuento(pag,id){ const s=D.sec[pag], d=(s.descuentos||[]).find(x=>x.id===id); if(!d) return;
-  s.descuentos=s.descuentos.filter(x=>x.id!==id); if(pag==='bar'&&UI.tkDesc) UI.tkDesc=r2(Math.max(0,UI.tkDesc-d.importe)); save(); render(); toast('Descuento quitado'); }
+  s.descuentos=s.descuentos.filter(x=>x.id!==id); if(pag==='bar'&&UI.tkDesc) UI.tkDesc=r2(Math.max(0,UI.tkDesc-d.importe)); save(); render(); toast(ETQ_DSC(d)+' quitado'); }
 function cuadre(t){
   const c=num(UI.contado);
   if(UI.contado.trim()===''||isNaN(c)) return '';
@@ -1133,7 +1142,7 @@ function tabla(l,total,ds){
   let h=`<div class="card"><div class="row head"><span class="grow">Artículo</span><span class="q">Efec.</span><span class="q">Tarj.</span>${hayVy?'<span class="q">Vtya.</span>':''}<span class="s">Importe</span></div>`, cat=null;
   l.forEach(x=>{ if(x.cat!==cat){cat=x.cat; h+=`<div class="row sub">${esc(cat)}</div>`;}
     h+=`<div class="row"><span class="grow">${esc(x.nombre)}</span><span class="q">${x.ef||'·'}</span><span class="q">${x.tj||'·'}</span>${hayVy?`<span class="q">${x.vy||'·'}</span>`:''}<span class="s">${x.precio?(x.cant?eur(x.subtotal):'—'):'Gratis'}</span></div>`; });
-  (ds||[]).forEach(d=>{ h+=`<div class="row dsc"><span class="grow">Descuento: ${esc(d.motivo)}${d.tipo==='pct'?` (${nf(d.valor).replace(/,00$/,'')} % de ${eur(d.base)})`:''} · ${d.metodo==='ef'?'efectivo':'tarjeta'}</span><button class="x" data-deldsc="${d.id}" aria-label="Quitar descuento ${esc(d.motivo)}">${UI.borrarD===d.id?'¿Seguro? Sí, quitar':'Quitar'}</button><span class="s">−${eur(d.importe)}</span></div>`; });
+  (ds||[]).forEach(d=>{ h+=`<div class="row dsc"><span class="grow">${ETQ_DSC(d)}: ${esc(d.motivo)}${d.tipo==='pct'?` (${nf(d.valor).replace(/,00$/,'')} % de ${eur(d.base)})`:''} · ${d.metodo==='ef'?'efectivo':'tarjeta'}</span><button class="x" data-deldsc="${d.id}" aria-label="Quitar descuento ${esc(d.motivo)}">${UI.borrarD===d.id?'¿Seguro? Sí, quitar':'Quitar'}</button><span class="s">−${eur(d.importe)}</span></div>`; });
   return h+`<div class="row tot"><span class="grow">Total</span><span class="s">${eur(total)}</span></div></div>`;
 }
 const turnoViejo=s=>new Date(s.inicio).toDateString()!==new Date().toDateString();
@@ -1181,7 +1190,7 @@ async function pedirCierre(){
   const t=totales(), s=sec(), pag=D.pagina; if(!(t.uds||t.vy)) return;
   const fila=(a,b)=>`<div><dt>${a}</dt><dd>${b}</dd></div>`, gr=(s.visitas||[]).length;
   const html=(t.tEf&&String(UI.contado).trim()===''?'<p class="aviso">Aún no has escrito el efectivo contado. Puedes cerrar igualmente, pero es mejor contarlo antes.</p>':'')
-    +`<dl class="tot">${fila('Efectivo',eur(t.tEf))}${fila('Tarjeta',eur(t.tTj))}${t.desc&&t.desc.total?fila(`Incluye ${t.desc.lista.length} ${t.desc.lista.length===1?'descuento':'descuentos'}`,'−'+eur(t.desc.total)):''}</dl>${cuadre(t)}`
+    +`<dl class="tot">${fila('Efectivo',eur(t.tEf))}${fila('Tarjeta',eur(t.tTj))}${(()=>{ if(!(t.desc&&t.desc.total)) return ''; const L=t.desc.lista, dr=L.filter(d=>d.cargo==='dir'), ds=L.filter(d=>d.cargo!=='dir'), sm=x=>x.reduce((a,d)=>a+d.importe,0); return (ds.length?fila(`Incluye ${ds.length} ${ds.length===1?'descuento':'descuentos'}`,'−'+eur(sm(ds))):'')+(dr.length?fila('A cargo del director',eur(sm(dr))):''); })()}</dl>${cuadre(t)}`
     +`<p class="small" style="margin-top:10px">${pag==='ent'&&gr?`La encuesta (${gr} grupos) va con el cierre. `:''}Se guarda en el historial y los contadores vuelven a cero.</p>`;
   if(!await pregunta({titulo:`¿Cerrar la caja con ${eur(t.total)}?`,html,ok:'Sí, cerrar caja',clase:'danger'})) return;
   if(D.pagina===pag&&!UI.home) cerrarCaja();
@@ -1228,6 +1237,7 @@ document.addEventListener('click',e=>{
   if(b.dataset.sub){ const id=b.dataset.sub; if(performance.now()-(UI.minusT[id]||-1e9)<400) return venderUno(id); return sumar(id,-1); }
   if(b.dataset.dsctipo){ UI.dsc.tipo=b.dataset.dsctipo; render(); const i=document.getElementById('dscVal'); if(i) i.focus(); return; }
   if(b.dataset.dscmet){ UI.dsc.metodo=b.dataset.dscmet; render(); return; }
+  if(b.dataset.dsccargo!==undefined&&UI.dsc){ UI.dsc.cargo=b.dataset.dsccargo; render(); return; }
   if(b.dataset.deldsc){ const id=b.dataset.deldsc; if(UI.borrarD!==id){ UI.borrarD=id; render(); clearTimeout(UI.borrarDT); UI.borrarDT=setTimeout(()=>{ if(UI.borrarD===id){ UI.borrarD=null; render(); } },5000); return; } UI.borrarD=null; return quitarDescuento(D.pagina,id); }
   if(b.dataset.del){ const id=b.dataset.del, s=sec(), p=s.productos.find(x=>x.id===id);
     if(UI.borrarP!==id){ UI.borrarP=id; render(); clearTimeout(UI.borrarPT); UI.borrarPT=setTimeout(()=>{ if(UI.borrarP===id){ UI.borrarP=null; render(); } },5000); return; }
