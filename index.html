@@ -116,6 +116,7 @@ body.con-hoja{overflow:hidden}
 .ini{border-color:var(--gold)}.ini-row{padding:10px 0;border-bottom:1px solid var(--line)}.ini-row.dudosa{background:color-mix(in srgb,var(--gold) 16%,transparent);margin:0 -14px;padding:10px 14px}.ini-ctl{display:flex;gap:6px;margin-top:6px}.ini-ctl select{flex:1;min-width:0}.ini-ctl input{width:78px;text-align:center}
 .ini-row .rev{color:var(--ink);margin:6px 0 4px}.chk{display:flex;align-items:center;gap:8px;min-height:40px}.chk input{width:22px;height:22px}
 .ventas .anulada{opacity:.55}.ventas .anulada .grow{text-decoration:line-through}ul.falta{margin:0 0 8px;padding-left:20px}
+.sync{display:flex;align-items:center;gap:8px;margin:-4px 0 12px}.sync .grow{flex:1}.sync .x{color:var(--accent)}
 .row2{display:flex;gap:8px}.row2 .btn{flex:1}.hacts{display:flex;gap:6px;flex:none}
 .vybox{background:var(--vy-soft);border:1px solid var(--vy-line);border-radius:12px;padding:12px 14px;font-size:15px;line-height:1.45;margin:10px 0}
 .chips{display:flex;gap:6px;overflow-x:auto;scrollbar-width:none}
@@ -843,7 +844,7 @@ function descargarEncuesta(){
 const TIT={ent:'Venta de entradas',tie:'Tienda',bar:'Bar'};
 const NOMSEC={ent:'Entradas',tie:'Tienda',bar:'Bar',vy:'Entradas Venteya'};
 const COLPDF={ent:[122,35,53],tie:[61,107,58],bar:[138,75,31]};
-function abrirSeccion(k){ UI.dsc=null; UI.soloVy=k==='vy'; if(k==='vy'){ k='ent'; D.metodo='vy'; } else if(D.metodo==='vy') D.metodo='ef'; D.pagina=k; UI.home=false; UI.view='Vender'; UI.filtro='Todo'; UI.confirmar=false; UI.contado=''; UI.cambio=false; save(); render(); window.scrollTo(0,0); entrar(); }
+function abrirSeccion(k){ UI.dsc=null; UI.soloVy=k==='vy'; if(k==='vy'){ k='ent'; D.metodo='vy'; } else if(D.metodo==='vy') D.metodo='ef'; D.pagina=k; UI.home=false; UI.view='Vender'; UI.filtro='Todo'; UI.confirmar=false; UI.contado=''; UI.cambio=false; save(); render(); window.scrollTo(0,0); entrar();  if(k==='tie') sincronizarInv(); }
 function lineasDe(k){
   const s=D.sec[k==='vy'?'ent':k], c=m=>id=>(s.counts[m]||{})[id]||0, ord=x=>{const i=DEF[k==='vy'?'ent':k].cats.indexOf(x);return i<0?99:i;};
   return s.productos.map(p=>{ const ef=c('ef')(p.id), tj=c('tj')(p.id), vy=c('vy')(p.id);
@@ -1058,6 +1059,11 @@ function bloqueEnvio(){
 }
 window.addEventListener('online',enviarCola);
 setInterval(enviarCola,60000);
+/* inventario: lo pendiente se envía en cuanto hay conexión; con la Tienda abierta se recogen además cada 5 min los cambios hechos en la hoja */
+window.addEventListener('online',()=>sincronizarInv());
+setInterval(()=>{ const I=inv(), pend=I.movs.some(m=>!m.env), enTienda=!UI.home&&D.pagina==='tie';
+  if(pend||(enTienda&&Date.now()-(I.sync||0)>5*60e3)) sincronizarInv(); },60000);
+setTimeout(()=>{ const I=inv(); if(I.inicial||I.movs.length) sincronizarInv(); },1500);   // al abrir la app
 
 /* ================= vistas ================= */
 function grupos(ps){ const g=[]; ps.forEach(p=>{const k=p.cat||'Otros'; let x=g.find(y=>y.k===k); if(!x){x={k,ps:[]};g.push(x);} x.ps.push(p);}); return g.sort((a,b)=>catOrd(a.k)-catOrd(b.k)); }
@@ -1111,7 +1117,36 @@ function renderVender(){
    no se puede aplicar dos veces. Anular devuelve las unidades una sola vez (queda marcada como anulada). */
 const inv=()=>D.sec.tie.inv, cesta=()=>D.sec.tie.cesta;
 const stockDe=id=>{ const v=inv().stock[id]; return typeof v==='number'?v:null; };
-function movInv(o){ const I=inv(); I.movs.push(Object.assign({id:uid(),fecha:Date.now()},o)); if(I.movs.length>3000) I.movs=I.movs.slice(-3000); }
+function movInv(o){ const I=inv(), p=D.sec.tie.productos.find(x=>x.id===o.pid); I.movs.push(Object.assign({id:'m'+Date.now().toString(36)+uid(),fecha:Date.now(),cat:p?p.cat:''},o));
+  if(I.movs.length>3000){ const quitar=I.movs.length-3000; let n=0; I.movs=I.movs.filter(m=>!(m.env&&n<quitar&&++n)); } }
+/* --- sincronización con la hoja «Inventario» del registro (la hoja manda en el total) ---
+   Cada movimiento se envía una vez con su id; el servidor no repite los que ya tiene. Cuando ya no queda nada
+   pendiente en el móvil, se toman las cifras de la hoja (así llegan también los cambios hechos a mano allí). */
+let sincronizandoInv=false;
+async function sincronizarInv(manual){
+  const I=inv();
+  if(!D.envio.url||!D.envio.clave){ if(manual) toast('Para sincronizar, configura antes el envío automático en Tarifas.'); return; }
+  if(navigator.onLine===false){ if(manual) toast('Sin internet: se sincronizará solo cuando haya conexión.'); return; }
+  if(sincronizandoInv) return; sincronizandoInv=true;
+  try{
+    for(let vuelta=0;vuelta<10;vuelta++){
+      const pend=I.movs.filter(m=>!m.env).slice(0,200);
+      const res=await postEnvio({tipo:'inventario',movs:pend.map(m=>({id:m.id,fecha:m.fecha,nombre:m.nombre,cat:m.cat||'',tipo:m.tipo,cambio:m.cambio,despues:m.despues,motivo:m.motivo||'',nota:m.nota||'',ref:m.ref||''}))});
+      if(!res||!res.ok){ if(manual) toast(res&&res.error==='clave'?'La clave del envío no es correcta.':'No se pudo sincronizar con la hoja. Se reintentará.'); return; }
+      const ok=new Set(res.hechos||[]); I.movs.forEach(m=>{ if(ok.has(m.id)) m.env=true; });
+      if(I.movs.some(m=>!m.env)){ save(); if(pend.length) continue; return; }
+      const S=res.stock||{}, clave=n=>String(n).normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/\s+/g,' ').trim(), M={};
+      Object.keys(S).forEach(n=>M[clave(n)]=S[n]);
+      let cambios=0; D.sec.tie.productos.forEach(p=>{ const v=M[clave(p.nombre)]; if(typeof v==='number'&&I.stock[p.id]!==v){ I.stock[p.id]=v; cambios++; } });
+      if(Object.keys(S).length&&!I.inicial) I.inicial={fecha:Date.now(),desdeHoja:true};
+      I.sync=Date.now(); save();
+      if(!UI.home&&D.pagina==='tie'&&!UI.invEd){ if(UI.view==='Inventario') render(); else if(UI.view==='Vender') D.sec.tie.productos.forEach(p=>pintarCelda(p.id)); }
+      if(manual) toast(cambios?`Sincronizado: ${cambios} ${cambios===1?'cifra actualizada':'cifras actualizadas'} desde la hoja`:'Sincronizado con la hoja');
+      return;
+    }
+  }catch(e){ if(manual) toast('No se pudo conectar con la hoja. Se reintentará.'); }
+  finally{ sincronizandoInv=false; }
+}
 function htmlStock(id){ const st=stockDe(id), q=cesta()[id]||0;
   if(st==null) return '<span class="st muted">Sin inventario</span>';
   const cls=st-q<0?' bad':st<=3?' warn':''; return `<span class="st${cls}">Quedan ${st}${q?` → ${st-q}`:''}</span>`; }
@@ -1138,7 +1173,7 @@ function registrarVenta(id,m,lineas){
     const st=stockDe(l.pid); if(st!=null){ inv().stock[l.pid]=st-l.q; movInv({tipo:'venta',pid:l.pid,nombre:l.nombre,antes:st,despues:st-l.q,cambio:-l.q,ref:id}); } });
   s.ventas.push({id,hora:Date.now(),metodo:m,lineas,total:r2(lineas.reduce((a,l)=>a+l.precio*l.q,0))});
   lineas.forEach(l=>{ delete s.cesta[l.pid]; });
-  save(); render(); return true;
+  save(); render(); sincronizarInv(); return true;
 }
 function anularVenta(id){
   const s=D.sec.tie, v=s.ventas.find(x=>x.id===id); if(!v) return toast('Esa venta ya no está en el turno abierto');
@@ -1146,7 +1181,7 @@ function anularVenta(id){
   if(v.lineas.some(l=>((s.counts[v.metodo]||{})[l.pid]||0)<l.q)) return toast('No se puede anular: las unidades ya no están en la caja del turno');
   v.lineas.forEach(l=>{ const n=s.counts[v.metodo][l.pid]-l.q; if(n>0) s.counts[v.metodo][l.pid]=n; else delete s.counts[v.metodo][l.pid]; apuntarHora(s,l.precio,v.metodo,-l.q);
     const st=stockDe(l.pid); if(st!=null){ inv().stock[l.pid]=st+l.q; movInv({tipo:'anulación',pid:l.pid,nombre:l.nombre,antes:st,despues:st+l.q,cambio:l.q,ref:v.id}); } });
-  v.anulada=Date.now(); save(); render(); toast(`Venta anulada: ${eur(v.total)} y unidades devueltas al inventario`);
+  v.anulada=Date.now(); save(); render(); sincronizarInv(); toast(`Venta anulada: ${eur(v.total)} y unidades devueltas al inventario`);
 }
 function htmlVentasTie(){
   const V=D.sec.tie.ventas.slice().reverse(); if(!V.length) return '';
@@ -1178,7 +1213,7 @@ function guardarAjuste(){
   if(E.motivo==='Otro'&&!(E.nota||'').trim()) return toast('Explica el motivo en la nota');
   C.forEach(({p,nv})=>{ const antes=stockDe(p.id); inv().stock[p.id]=nv.v;
     movInv({tipo:nv.tipo,pid:p.id,nombre:p.nombre,antes,despues:nv.v,cambio:nv.v-(antes||0),motivo:E.motivo,nota:(E.nota||'').trim().slice(0,120)}); });
-  UI.invEd=null; save(); render(); window.scrollTo(0,0); toast(`Inventario guardado: ${C.length} ${C.length===1?'cambio':'cambios'}`);
+  UI.invEd=null; save(); render(); window.scrollTo(0,0); sincronizarInv(); toast(`Inventario guardado: ${C.length} ${C.length===1?'cambio':'cambios'}`);
 }
 function renderInventario(){
   const el=document.getElementById('vInventario'), s=D.sec.tie, E=UI.invEd;
@@ -1193,6 +1228,8 @@ function renderInventario(){
       <div class="row2"><button class="btn" data-act="invGuardar">Guardar</button><button class="btn ghost" data-act="invCancelar">Cancelar</button></div></div>`;
     el.innerHTML=h; return;
   }
+  { const I=inv(), pend=I.movs.filter(m=>!m.env).length, on=D.envio.url&&D.envio.clave;
+    h+=`<div class="sync small"><span class="grow">${!on?'<b class="bad">Sin conexión con la hoja:</b> configura el envío automático en Tarifas.':pend?`<b class="warn">${pend} ${pend===1?'cambio pendiente':'cambios pendientes'}</b> de enviar a la hoja «Inventario».`:I.sync?`Sincronizado con la hoja «Inventario» ${new Date(I.sync).toLocaleString('es-ES',{day:'numeric',month:'numeric',hour:'2-digit',minute:'2-digit'})}.`:'Aún no se ha sincronizado con la hoja.'}</span>${on?'<button class="x" data-act="invSync">Sincronizar</button>':''}</div>`; }
   if(!inv().inicial) h+=htmlInicial();
   h+=`<div class="card">`+gs.map(g=>`<div class="row sub">${esc(g.k)}</div>`+g.ps.map(p=>{ const st=stockDe(p.id);
     return `<div class="inv-row"><span class="grow">${esc(p.nombre)}</span><b class="inv-n${st==null?' muted':st<=0?' bad':st<=3?' warn':''}">${st==null?'Sin contar':st+' ud.'}</b></div>`; }).join('')).join('')+`</div>
@@ -1240,7 +1277,7 @@ function guardarInicial(){
   const P=D.sec.tie.productos;
   Object.entries(suma).forEach(([id,v])=>{ const p=P.find(x=>x.id===id); if(!p) return; const antes=stockDe(id); inv().stock[id]=v;
     movInv({tipo:'inventario inicial',pid:id,nombre:p.nombre,antes,despues:v,cambio:v-(antes||0),motivo:'Inventario inicial (hoja del 4/11/2026)'}); });
-  inv().inicial={fecha:Date.now(),articulos:Object.keys(suma).length}; UI.ini=null; save(); render(); window.scrollTo(0,0);
+  inv().inicial={fecha:Date.now(),articulos:Object.keys(suma).length}; UI.ini=null; save(); render(); window.scrollTo(0,0); sincronizarInv();
   toast(`Inventario inicial guardado: ${Object.keys(suma).length} artículos`);
 }
 /* ---------- descuento libre ---------- */
@@ -1391,7 +1428,7 @@ document.addEventListener('click',e=>{
   if(b.dataset.p){ D.pagina=b.dataset.p; UI.filtro='Todo'; UI.confirmar=false; UI.contado=''; save(); render(); window.scrollTo(0,0); return; }
   if(b.dataset.m){ D.metodo=b.dataset.m; save(); render(); return; }
   if(b.dataset.f){ UI.filtro=b.dataset.f; document.querySelectorAll('#chips button').forEach(x=>x.setAttribute('aria-pressed',x===b)); renderVender(); return; }
-  if(b.dataset.v){ UI.view=b.dataset.v; UI.confirmar=false; UI.editT=false; render(); window.scrollTo(0,0); return; }
+  if(b.dataset.v){ UI.view=b.dataset.v; UI.confirmar=false; UI.editT=false; render(); window.scrollTo(0,0); if(UI.view==='Inventario') sincronizarInv(); return; }
   if(b.dataset.add) return venderUno(b.dataset.add);
   /* si el − aparece bajo el dedo durante toques rápidos, ese toque sigue siendo una venta */
   if(b.dataset.sub){ const id=b.dataset.sub; if(performance.now()-(UI.minusT[id]||-1e9)<400) return venderUno(id); return D.pagina==='tie'?aCesta(id,-1):sumar(id,-1); }
@@ -1421,6 +1458,7 @@ document.addEventListener('click',e=>{
   if(a==='invCancelar'){ UI.invEd=null; render(); toast('Sin cambios en el inventario'); }
   if(a==='invGuardar') guardarAjuste();
   if(a==='iniGuardar') guardarInicial();
+  if(a==='invSync') sincronizarInv(true);
   if(a==='iniManual'){ inv().inicial={fecha:Date.now(),manual:true}; save(); render(); }
   if(a==='dscAbrir') abrirDescuento();
   if(a==='dscCancelar'){ UI.dsc=null; render(); }
