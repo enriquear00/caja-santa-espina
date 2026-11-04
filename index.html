@@ -108,7 +108,15 @@ body.con-hoja{overflow:hidden}
 .ent-row{display:flex;gap:6px;align-items:stretch}.ent-row input{flex:1;min-width:0}
 .sep-btn{flex:none;border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:10px;padding:0 10px;font:700 15px var(--body);min-height:48px;cursor:pointer;white-space:nowrap}
 .form-v.editando{outline:2px solid var(--accent);outline-offset:2px}.edit-note{margin:0 0 10px;font-size:15px}
-.x[data-editv]{color:var(--accent)}.desc-box.dir{border-color:var(--gold)}.row2{display:flex;gap:8px}.row2 .btn{flex:1}.hacts{display:flex;gap:6px;flex:none}
+.x[data-editv]{color:var(--accent)}.desc-box.dir{border-color:var(--gold)}.tile .st{display:block;font-size:12.5px;font-weight:600;color:var(--muted);margin-top:4px}.tile .st.warn{color:#9a6200}.tile .st.bad{color:#b42318}.tile .st.muted{font-weight:500;opacity:.8}
+.inv-row{display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--line)}.inv-row:last-child{border-bottom:0}.inv-row .grow{flex:1;min-width:0}
+.inv-n{font-variant-numeric:tabular-nums;white-space:nowrap}.inv-n.warn,b.warn{color:#9a6200}.inv-n.bad,b.bad{color:#b42318}.inv-n.muted{color:var(--muted);font-weight:500}
+.inv-ctl{display:flex;align-items:center;gap:6px;flex:none}.inv-d{min-width:30px;text-align:center;font-variant-numeric:tabular-nums}.inv-rec{width:68px;min-height:44px;text-align:center}
+.inv-row.ed .mini{min-width:44px;min-height:44px;font-size:20px;border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:10px;font-weight:700;cursor:pointer;padding:0}.inv-row.ed .mini[disabled]{opacity:.4}
+.ini{border-color:var(--gold)}.ini-row{padding:10px 0;border-bottom:1px solid var(--line)}.ini-row.dudosa{background:color-mix(in srgb,var(--gold) 16%,transparent);margin:0 -14px;padding:10px 14px}.ini-ctl{display:flex;gap:6px;margin-top:6px}.ini-ctl select{flex:1;min-width:0}.ini-ctl input{width:78px;text-align:center}
+.ini-row .rev{color:var(--ink);margin:6px 0 4px}.chk{display:flex;align-items:center;gap:8px;min-height:40px}.chk input{width:22px;height:22px}
+.ventas .anulada{opacity:.55}.ventas .anulada .grow{text-decoration:line-through}ul.falta{margin:0 0 8px;padding-left:20px}
+.row2{display:flex;gap:8px}.row2 .btn{flex:1}.hacts{display:flex;gap:6px;flex:none}
 .vybox{background:var(--vy-soft);border:1px solid var(--vy-line);border-radius:12px;padding:12px 14px;font-size:15px;line-height:1.45;margin:10px 0}
 .chips{display:flex;gap:6px;overflow-x:auto;scrollbar-width:none}
 .chips::-webkit-scrollbar{display:none}
@@ -265,12 +273,14 @@ dialog.hojaD.in{opacity:1}}
     <section id="vCaja" hidden></section>
     <section id="vCarta" hidden></section>
     <section id="vVisitas" hidden></section>
+    <section id="vInventario" hidden></section>
   </main>
   <div id="ticket" class="ticket pad" hidden></div>
   <nav class="pad"><div class="in" role="tablist">
     <button role="tab" data-v="Vender" aria-selected="true">Vender</button>
     <button role="tab" data-v="Caja" aria-selected="false">Caja</button>
     <button role="tab" data-v="Visitas" aria-selected="false">Encuesta</button>
+    <button role="tab" data-v="Inventario" aria-selected="false" hidden>Inventario</button>
     <button role="tab" data-v="Carta" aria-selected="false">Tarifas</button>
   </div></nav>
 </div>
@@ -320,6 +330,8 @@ function normalizar(){
   if(!D||!D.sec){ D={sec:{ent:nuevaSec('ent'),tie:nuevaSec('tie'),bar:nuevaSec('bar')},pagina:'ent',metodo:'ef'}; }
   ['ent','tie','bar'].forEach(k=>{ if(!D.sec[k]) D.sec[k]=nuevaSec(k); const s=D.sec[k]; s.productos=Array.isArray(s.productos)?s.productos:[]; s.counts=s.counts||{ef:{},tj:{}}; s.counts.ef=s.counts.ef||{}; s.counts.tj=s.counts.tj||{}; s.counts.vy=s.counts.vy||{}; s.cierres=Array.isArray(s.cierres)?s.cierres:[]; s.inicio=s.inicio||Date.now(); });
   ['ent','tie','bar'].forEach(k=>{ D.sec[k].descuentos=Array.isArray(D.sec[k].descuentos)?D.sec[k].descuentos:[]; });
+  { const t=D.sec.tie; t.inv=t.inv&&typeof t.inv==='object'?t.inv:{}; t.inv.stock=t.inv.stock&&typeof t.inv.stock==='object'?t.inv.stock:{}; t.inv.movs=Array.isArray(t.inv.movs)?t.inv.movs:[]; t.inv.inicial=t.inv.inicial||null;
+    t.cesta=t.cesta&&typeof t.cesta==='object'?t.cesta:{}; t.ventas=Array.isArray(t.ventas)?t.ventas:[]; }
   D.sec.ent.visitas=D.sec.ent.visitas||[]; D.envio=Object.assign({url:'',clave:'',movil:''},D.envio||{}); D.cola=Array.isArray(D.cola)?D.cola:[];
   if(!D.sec[D.pagina]) D.pagina='ent'; if(!['ef','tj','vy'].includes(D.metodo)) D.metodo='ef';
 }
@@ -373,7 +385,8 @@ function sumar(id,d){
 /* --- repintado de una venta: solo lo que cambia, sin recrear la ficha bajo el dedo --- */
 function pintarCelda(id){
   const p=sec().productos.find(x=>x.id===id), cel=document.querySelector(`.cell[data-cell="${CSS.escape(id)}"]`); if(!p||!cel) return;
-  const m=D.metodo, c=cnt(m,id), any=m==='vy'?c:(c||cnt('ef',id)+cnt('tj',id)), tile=cel.querySelector('.tile');
+  const m=D.metodo, tie=D.pagina==='tie', c=tie?(cesta()[id]||0):cnt(m,id), any=tie?c:m==='vy'?c:(c||cnt('ef',id)+cnt('tj',id)), tile=cel.querySelector('.tile');
+  if(tie){ const st=tile.querySelector('.st'); if(st) st.outerHTML=htmlStock(id); }
   tile.classList.toggle('on',!!c);
   let bd=tile.querySelector('.badge');
   if(c){ if(!bd){ bd=document.createElement('span'); bd.className='badge'; tile.appendChild(bd); } bd.textContent=c; } else if(bd) bd.remove();
@@ -396,6 +409,7 @@ function pintarVenta(id){
   const r=document.getElementById('dscRes'); if(r) r.innerHTML=textoDescuento();
 }
 function venderUno(id){
+  if(D.pagina==='tie'){ UI.minusT[id]=performance.now(); return aCesta(id,1); }
   const pr=sec().productos.find(x=>x.id===id), m=D.metodo, pag=D.pagina; UI.minusT[id]=performance.now(); sumar(id,1);
   if(pr) toast(`+1 ${pr.nombre}${m==='tj'?' · tarjeta':m==='vy'?' · Venteya':''}`,'Deshacer',()=>{ if(D.pagina!==pag) return toast('Para deshacer, vuelve a esa caja y usa el botón −'); const prev=D.metodo; D.metodo=m; sumar(id,-1); D.metodo=prev; save(); render(); toast('Deshecho: '+pr.nombre); });
 }
@@ -440,7 +454,7 @@ function cierreActual(){
 function cerrarCaja(){
   const c=cierreActual(), s=sec();
   s.cierres.unshift(c); s.cierres=s.cierres.slice(0,400);
-  s.counts={ef:{},tj:{},vy:{}}; s.horas={}; s.descuentos=[]; UI.dsc=null; UI.tkDesc=0; if(D.pagina==='ent') s.visitas=[]; if(D.pagina==='bar'){ UI.ticket={}; UI.cambio=false; UI.entrega=''; } s.inicio=Date.now(); UI.confirmar=false; UI.contado='';
+  s.counts={ef:{},tj:{},vy:{}}; s.horas={}; s.descuentos=[]; UI.dsc=null; UI.tkDesc=0; if(D.pagina==='ent') s.visitas=[]; if(D.pagina==='bar'){ UI.ticket={}; UI.cambio=false; UI.entrega=''; } if(D.pagina==='tie'){ s.ventas=[]; s.cesta={}; } s.inicio=Date.now(); UI.confirmar=false; UI.contado='';
   D.cola.push({id:c.id,cierre:c}); D.cola=D.cola.slice(-300);
   save(); render(); toast('Caja cerrada: '+eur(c.total)); enviarCola();
 }
@@ -900,8 +914,11 @@ function renderHome(){
 UI.ticket=UI.ticket||{}; UI.cambio=false; UI.entrega='';
 function ticketInfo(){ const s=D.sec.bar; let tot=0,n=0; for(const [id,q] of Object.entries(UI.ticket)){ const p=s.productos.find(x=>x.id===id); if(p&&q>0){tot+=p.precio*q;n+=q;} } return {tot:r2(Math.max(0,tot-(UI.tkDesc||0))),n,bruto:r2(tot)}; }
 function renderTicket(){
-  const el=document.getElementById('ticket'), on=!UI.home&&D.pagina==='bar'&&UI.view==='Vender';
+  const el=document.getElementById('ticket'), onTie=!UI.home&&D.pagina==='tie'&&UI.view==='Vender', on=onTie||(!UI.home&&D.pagina==='bar'&&UI.view==='Vender');
   el.hidden=!on; document.body.classList.toggle('con-ticket',on); if(!on){ el.classList.remove('sheet'); document.body.classList.remove('con-hoja'); return; }
+  if(onTie){ el.classList.remove('sheet'); document.body.classList.remove('con-hoja'); const {n,tot}=cestaInfo(), m=D.metodo==='tj'?'tarjeta':'efectivo';
+    el.innerHTML=`<div class="tk-row"><span class="tk-l"><span class="small" style="white-space:nowrap">Cesta (${n}) · ${m}</span><b>${eur(tot)}</b></span>
+      <button class="tk-b ghost" data-act="cestaVaciar" ${n?'':'disabled'}>Vaciar</button><button class="tk-b" data-act="cestaConfirmar" ${n?'':'disabled'}>Confirmar venta</button></div>`; return; }
   const {tot,n}=ticketInfo(), ent=num(UI.entrega), hoja=UI.cambio&&n;
   el.classList.toggle('sheet',!!hoja); document.body.classList.toggle('con-hoja',!!hoja);
   let h;
@@ -1060,8 +1077,10 @@ function render(){
   document.querySelectorAll('nav button').forEach(b=>b.setAttribute('aria-selected',b.dataset.v===UI.view));
   if(!esEnt&&UI.view==='Visitas') UI.view='Vender';
   document.querySelector('nav [data-v="Visitas"]').hidden=!esEnt;
+  if(D.pagina!=='tie'&&UI.view==='Inventario') UI.view='Vender';
+  document.querySelector('nav [data-v="Inventario"]').hidden=D.pagina!=='tie';
   document.querySelectorAll('nav button').forEach(b=>b.setAttribute('aria-selected',b.dataset.v===UI.view));
-  ['Vender','Caja','Carta','Visitas'].forEach(v=>document.getElementById('v'+v).hidden=v!==UI.view);
+  ['Vender','Caja','Carta','Visitas','Inventario'].forEach(v=>document.getElementById('v'+v).hidden=v!==UI.view);
   const cs=grupos(sec().productos).map(g=>g.k);
   if(UI.filtro!=='Todo'&&!cs.includes(UI.filtro)) UI.filtro='Todo';
   const ch=document.getElementById('chips'); ch.hidden=!vend||cs.length<3;
@@ -1070,20 +1089,159 @@ function render(){
   if(UI.view==='Caja') renderCaja(t);
   if(UI.view==='Carta') renderCarta();
   if(UI.view==='Visitas') renderVisitas(t);
+  if(UI.view==='Inventario') renderInventario();
   renderTicket();
 }
 function renderVender(){
   const el=document.getElementById('vVender'), m=D.metodo; el.className='m-'+m;
   if(!sec().productos.length){ el.innerHTML='<div class="empty">Aún no hay tarifas.<br>Añádelas en la pestaña <b>Tarifas</b>.</div>'; return; }
   const gs=grupos(sec().productos).filter(g=>UI.filtro==='Todo'||g.k===UI.filtro);
-  el.innerHTML=(m==='vy'?`<p class="vybox"><b>Pregunta al llegar si compraron la entrada en la web (Venteya).</b> Si es así, toca aquí su tipo de entrada, una vez por persona. Cuentan como visitantes y van en el cierre de Entradas, pero no se cobran ni entran en el dinero de la caja.</p>`:'')+(m==='vy'?'':`<p class="hint">Cobrando en <b>${NOMBRE[m].toLowerCase()}</b>. Toca ${D.pagina==='ent'?'una entrada por cada persona':D.pagina==='bar'?'cada consumición; abajo ves el pedido y el cambio':'un artículo cada vez que lo vendas'}. El botón − quita uno.</p>`)+
+  el.innerHTML=(m==='vy'?`<p class="vybox"><b>Pregunta al llegar si compraron la entrada en la web (Venteya).</b> Si es así, toca aquí su tipo de entrada, una vez por persona. Cuentan como visitantes y van en el cierre de Entradas, pero no se cobran ni entran en el dinero de la caja.</p>`:'')+(m==='vy'?'':`<p class="hint">Cobrando en <b>${NOMBRE[m].toLowerCase()}</b>. Toca ${D.pagina==='ent'?'una entrada por cada persona':D.pagina==='bar'?'cada consumición; abajo ves el pedido y el cambio':'los artículos para ponerlos en la cesta y pulsa <b>Confirmar venta</b> abajo. Hasta confirmar no se cobra ni se descuenta nada del inventario'}. El botón − quita uno.</p>`)+
     gs.map(g=>`<h3 class="cat">${esc(g.k)}</h3><div class="grid">`+g.ps.map(p=>{
-      const c=cnt(m,p.id), any=m==='vy'?c:(c||cnt('ef',p.id)+cnt('tj',p.id));
-      return `<div class="cell" data-cell="${p.id}"><button class="tile${c?' on':''}" data-add="${p.id}" aria-label="Sumar ${esc(p.nombre)}">
-        <span class="n">${esc(p.nombre)}</span><span class="p${p.precio?'':' free'}">${p.precio?eur(p.precio):'Gratuita'}</span>
+      const tie=D.pagina==='tie', c=tie?(cesta()[p.id]||0):cnt(m,p.id), any=tie?c:m==='vy'?c:(c||cnt('ef',p.id)+cnt('tj',p.id));
+      return `<div class="cell" data-cell="${p.id}"><button class="tile${c?' on':''}" data-add="${p.id}" aria-label="${tie?'Añadir a la cesta':'Sumar'} ${esc(p.nombre)}">
+        <span class="n">${esc(p.nombre)}</span><span class="p${p.precio?'':' free'}">${p.precio?eur(p.precio):'Gratuita'}</span>${tie?htmlStock(p.id):''}
         ${c?`<span class="badge">${c}</span>`:''}</button>
         ${any?`<button class="minus" data-sub="${p.id}" aria-label="Quitar uno de ${esc(p.nombre)}">−</button>`:''}</div>`;
-    }).join('')+'</div>').join('')+(m==='vy'?'':panelDescuento());
+    }).join('')+'</div>').join('')+(D.pagina==='tie'?htmlVentasTie():'')+(m==='vy'?'':panelDescuento());
+}
+/* ================= tienda: cesta, ventas e inventario =================
+   El stock se guarda por artículo (id del producto de Tarifas) en D.sec.tie.inv.stock.
+   Una venta confirmada suma a la caja y descuenta el stock en el MISMO guardado; cada venta tiene un id y
+   no se puede aplicar dos veces. Anular devuelve las unidades una sola vez (queda marcada como anulada). */
+const inv=()=>D.sec.tie.inv, cesta=()=>D.sec.tie.cesta;
+const stockDe=id=>{ const v=inv().stock[id]; return typeof v==='number'?v:null; };
+function movInv(o){ const I=inv(); I.movs.push(Object.assign({id:uid(),fecha:Date.now()},o)); if(I.movs.length>3000) I.movs=I.movs.slice(-3000); }
+function htmlStock(id){ const st=stockDe(id), q=cesta()[id]||0;
+  if(st==null) return '<span class="st muted">Sin inventario</span>';
+  const cls=st-q<0?' bad':st<=3?' warn':''; return `<span class="st${cls}">Quedan ${st}${q?` → ${st-q}`:''}</span>`; }
+function cestaInfo(){ const s=D.sec.tie, L=[]; let tot=0,n=0;
+  for(const [id,q] of Object.entries(cesta())){ const p=s.productos.find(x=>x.id===id); if(p&&q>0){ L.push({p,q}); tot+=p.precio*q; n+=q; } }
+  return {L,n,tot:r2(tot)}; }
+function aCesta(id,d){ const c=cesta(), q=(c[id]||0)+d; if(q>0) c[id]=q; else delete c[id]; save(); pintarCelda(id); renderTicket(); }
+async function confirmarVenta(){
+  if(UI.vendiendo) return; const {L,n}=cestaInfo(); if(!n) return;
+  UI.vendiendo=true;
+  try{
+    const faltan=L.filter(x=>{ const st=stockDe(x.p.id); return st!=null&&x.q>st; });
+    if(faltan.length&&!await pregunta({titulo:'No hay unidades suficientes',clase:'danger',ok:'Vender igualmente',cancelar:'Volver a la cesta',
+      html:'<ul class="falta">'+faltan.map(x=>`<li><b>${esc(x.p.nombre)}</b>: vendes ${x.q} y quedan ${stockDe(x.p.id)}</li>`).join('')+'</ul><p class="small">Si de verdad están en la tienda, puedes vender igualmente; el inventario quedará en negativo y conviene corregir el recuento.</p>'})) return;
+    const m=D.metodo==='tj'?'tj':'ef', id='v'+Date.now().toString(36)+uid();
+    registrarVenta(id,m,L.map(x=>({pid:x.p.id,nombre:x.p.nombre,precio:x.p.precio,q:x.q})));
+    toast(`Venta confirmada · ${eur(r2(L.reduce((a,x)=>a+x.p.precio*x.q,0)))} en ${m==='tj'?'tarjeta':'efectivo'}`);
+  } finally { UI.vendiendo=false; }
+}
+// Aplica una venta: caja + stock + registro, todo en un solo guardado. Si el id ya existe (reintento), no hace nada.
+function registrarVenta(id,m,lineas){
+  const s=D.sec.tie; if(s.ventas.some(v=>v.id===id)) return false;
+  lineas.forEach(l=>{ s.counts[m][l.pid]=(s.counts[m][l.pid]||0)+l.q; apuntarHora(s,l.precio,m,l.q);
+    const st=stockDe(l.pid); if(st!=null){ inv().stock[l.pid]=st-l.q; movInv({tipo:'venta',pid:l.pid,nombre:l.nombre,antes:st,despues:st-l.q,cambio:-l.q,ref:id}); } });
+  s.ventas.push({id,hora:Date.now(),metodo:m,lineas,total:r2(lineas.reduce((a,l)=>a+l.precio*l.q,0))});
+  lineas.forEach(l=>{ delete s.cesta[l.pid]; });
+  save(); render(); return true;
+}
+function anularVenta(id){
+  const s=D.sec.tie, v=s.ventas.find(x=>x.id===id); if(!v) return toast('Esa venta ya no está en el turno abierto');
+  if(v.anulada) return toast('Esa venta ya estaba anulada');
+  if(v.lineas.some(l=>((s.counts[v.metodo]||{})[l.pid]||0)<l.q)) return toast('No se puede anular: las unidades ya no están en la caja del turno');
+  v.lineas.forEach(l=>{ const n=s.counts[v.metodo][l.pid]-l.q; if(n>0) s.counts[v.metodo][l.pid]=n; else delete s.counts[v.metodo][l.pid]; apuntarHora(s,l.precio,v.metodo,-l.q);
+    const st=stockDe(l.pid); if(st!=null){ inv().stock[l.pid]=st+l.q; movInv({tipo:'anulación',pid:l.pid,nombre:l.nombre,antes:st,despues:st+l.q,cambio:l.q,ref:v.id}); } });
+  v.anulada=Date.now(); save(); render(); toast(`Venta anulada: ${eur(v.total)} y unidades devueltas al inventario`);
+}
+function htmlVentasTie(){
+  const V=D.sec.tie.ventas.slice().reverse(); if(!V.length) return '';
+  const hr=t=>new Date(t).toLocaleTimeString('es-ES',{hour:'2-digit',minute:'2-digit'});
+  return `<h3 class="cat">Ventas de este turno</h3><div class="card ventas">`+V.map(v=>`<div class="hrow${v.anulada?' anulada':''}"><span class="grow"><b>${hr(v.hora)}</b> · ${eur(v.total)} · ${v.metodo==='tj'?'tarjeta':'efectivo'}<br><span class="small">${v.lineas.map(l=>`${l.q} × ${esc(l.nombre)}`).join(' · ')}</span></span>
+    ${v.anulada?`<span class="small">Anulada ${hr(v.anulada)}</span>`:`<button class="x" data-anular="${v.id}">${UI.anularV===v.id?'¿Anular? Sí':'Anular'}</button>`}</div>`).join('')+'</div>';
+}
+/* --- pestaña Inventario --- */
+const MOTIVOS_INV=['Reposición (llega género)','Retirada (rotura, caducado o pérdida)','Uso interno o regalo','Recuento (corregir el total real)','Otro'];
+function nuevoValor(id){ const r=(UI.invEd&&UI.invEd.d[id])||{delta:0,recuento:''}, st=stockDe(id);
+  if(r.recuento!=='') return {v:parseInt(r.recuento,10),tipo:'recuento'};
+  if(!r.delta) return null; return {v:(st||0)+r.delta,tipo:r.delta>0?'reposición':'retirada'}; }
+function htmlFilaAjuste(p){
+  const st=stockDe(p.id), r=UI.invEd.d[p.id]||{delta:0,recuento:''}, nv=nuevoValor(p.id);
+  return `<div class="inv-row ed" data-inv="${p.id}"><span class="grow"><b>${esc(p.nombre)}</b><br><span class="small">Ahora: ${st==null?'sin contar':st}${nv?` → <b class="${nv.v<0?'bad':''}">${nv.v}</b> (${nv.tipo==='recuento'?'recuento':(r.delta>0?'+':'')+r.delta})`:''}</span></span>
+    <span class="inv-ctl"><button type="button" class="mini" data-invd="${p.id}" data-paso="-1" aria-label="Retirar una unidad de ${esc(p.nombre)}" ${r.recuento!==''?'disabled':''}>−</button><b class="inv-d">${r.delta>0?'+':''}${r.delta||0}</b><button type="button" class="mini" data-invd="${p.id}" data-paso="1" aria-label="Reponer una unidad de ${esc(p.nombre)}" ${r.recuento!==''?'disabled':''}>+</button>
+    <input class="inv-rec" data-recuento="${p.id}" inputmode="numeric" placeholder="Total" value="${esc(r.recuento)}" aria-label="Total real tras el recuento de ${esc(p.nombre)}"></span></div>`;
+}
+function pintarFilaAjuste(id,deInput){ const p=D.sec.tie.productos.find(x=>x.id===id), el=document.querySelector(`.inv-row[data-inv="${CSS.escape(id)}"]`); if(!p||!el) return;
+  if(deInput){ const tmp=document.createElement('div'); tmp.innerHTML=htmlFilaAjuste(p); el.querySelector('.grow').innerHTML=tmp.querySelector('.grow').innerHTML; el.querySelector('.inv-d').textContent='0'; el.querySelectorAll('[data-invd]').forEach(b=>b.disabled=UI.invEd.d[id].recuento!==''); }
+  else el.outerHTML=htmlFilaAjuste(p);
+  const res=document.getElementById('invRes'); if(res) res.textContent=resumenAjuste(); }
+function cambiosAjuste(){ return D.sec.tie.productos.map(p=>({p,nv:nuevoValor(p.id)})).filter(x=>x.nv&&!isNaN(x.nv.v)&&x.nv.v!==stockDe(x.p.id)); }
+function resumenAjuste(){ const C=cambiosAjuste(); return C.length?`${C.length} ${C.length===1?'artículo cambia':'artículos cambian'}.`:'Aún no hay cambios.'; }
+function guardarAjuste(){
+  const E=UI.invEd, C=cambiosAjuste();
+  if(!C.length) return toast('No hay ningún cambio que guardar');
+  if(!E.motivo) { const s=document.getElementById('invMot'); if(s) s.focus(); return toast('Elige el motivo del ajuste'); }
+  if(E.motivo==='Otro'&&!(E.nota||'').trim()) return toast('Explica el motivo en la nota');
+  C.forEach(({p,nv})=>{ const antes=stockDe(p.id); inv().stock[p.id]=nv.v;
+    movInv({tipo:nv.tipo,pid:p.id,nombre:p.nombre,antes,despues:nv.v,cambio:nv.v-(antes||0),motivo:E.motivo,nota:(E.nota||'').trim().slice(0,120)}); });
+  UI.invEd=null; save(); render(); window.scrollTo(0,0); toast(`Inventario guardado: ${C.length} ${C.length===1?'cambio':'cambios'}`);
+}
+function renderInventario(){
+  const el=document.getElementById('vInventario'), s=D.sec.tie, E=UI.invEd;
+  const gs=grupos(s.productos);
+  let h=`<h2>Inventario de la tienda</h2>`;
+  if(E){
+    h+=`<p class="small" style="margin:-6px 0 12px">Usa <b>+</b> para reponer, <b>−</b> para retirar, o escribe el <b>total</b> real si has contado. Nada cambia hasta que pulses Guardar.</p>
+    <div class="card">`+gs.map(g=>`<div class="row sub">${esc(g.k)}</div>`+g.ps.map(htmlFilaAjuste).join('')).join('')+`</div>
+    <div class="card form-v"><div class="field"><label class="lbl" for="invMot">Motivo del ajuste</label><select id="invMot"><option value="">Elige el motivo</option>${MOTIVOS_INV.map(x=>`<option${E.motivo===x?' selected':''}>${x}</option>`).join('')}</select></div>
+      <div class="field"><label class="lbl" for="invNota">Nota (opcional)</label><input id="invNota" maxlength="120" value="${esc(E.nota||'')}" placeholder="Ej. Pedido del proveedor, 2 rotas en el almacén…" autocomplete="off"></div>
+      <p class="small" id="invRes">${resumenAjuste()}</p>
+      <div class="row2"><button class="btn" data-act="invGuardar">Guardar</button><button class="btn ghost" data-act="invCancelar">Cancelar</button></div></div>`;
+    el.innerHTML=h; return;
+  }
+  if(!inv().inicial) h+=htmlInicial();
+  h+=`<div class="card">`+gs.map(g=>`<div class="row sub">${esc(g.k)}</div>`+g.ps.map(p=>{ const st=stockDe(p.id);
+    return `<div class="inv-row"><span class="grow">${esc(p.nombre)}</span><b class="inv-n${st==null?' muted':st<=0?' bad':st<=3?' warn':''}">${st==null?'Sin contar':st+' ud.'}</b></div>`; }).join('')).join('')+`</div>
+    <button class="btn" data-act="invEditar" style="margin-top:12px">Modificar inventario</button>`;
+  const todo=!!UI.invTodo, M=inv().movs.filter(x=>todo||!['venta','anulación'].includes(x.tipo)).slice().reverse().slice(0,60);
+  h+=`<h3 style="margin-top:22px">Historial de ajustes</h3>
+    <div class="opts" style="margin-bottom:10px"><button type="button" data-invh="0" aria-pressed="${!todo}">Solo ajustes</button><button type="button" data-invh="1" aria-pressed="${todo}">Con ventas y anulaciones</button></div>`;
+  h+=M.length?'<div class="card">'+M.map(x=>`<div class="hrow"><span class="grow"><b>${fmtF(x.fecha)}</b> · ${esc(x.nombre)}<br><span class="small">${esc(x.tipo.charAt(0).toUpperCase()+x.tipo.slice(1))}: ${x.antes==null?'sin contar':x.antes} → ${x.despues}${x.motivo?` · ${esc(x.motivo)}`:''}${x.nota?` · ${esc(x.nota)}`:''}</span></span><b class="${x.cambio<0?'bad':''}">${x.cambio>0?'+':''}${x.cambio}</b></div>`).join('')+'</div>':'<p class="small">Todavía no hay movimientos.</p>';
+  el.innerHTML=h;
+}
+/* --- inventario inicial desde la foto del 4/11/2026: cada línea se relaciona con un artículo de Tarifas;
+       las dudosas quedan marcadas y hay que revisarlas antes de guardar --- */
+const INV_FOTO=[
+  {foto:'Quesos (cuñas)',cuenta:'12 cuñas',q:12,prod:'Queso oveja leche cruda semicurado (cuña)',rev:'La hoja dice «12 cuñas» sin separar semicurado y curado. Reparte las 12 entre esta línea y la siguiente.'},
+  {foto:'Quesos (cuñas)',cuenta:'(reparto)',q:0,prod:'Queso oveja leche cruda curado (cuña)',rev:'Pon aquí las cuñas de curado y quítalas de la línea de arriba.'},
+  {foto:'Fanta limón',cuenta:'3',q:3,prod:'Refresco Burbuja',rev:'En Tarifas no hay Fanta: se suma a «Refresco Burbuja». ¿Es correcto?'},
+  {foto:'Cocacola normal',cuenta:'3 + 24 + 8 + 8',q:43,prod:'Refresco Burbuja',rev:'En Tarifas no hay Coca-Cola: se suma a «Refresco Burbuja». ¿Es correcto?'},
+  {foto:'Cocacola zero',cuenta:'3 + 10 + 8',q:21,prod:'Refresco Burbuja',rev:'En Tarifas no hay Coca-Cola Zero: se suma a «Refresco Burbuja». ¿Es correcto?'},
+  {foto:'Fuze tea',cuenta:'6',q:6,prod:'Refresco Tea'},
+  {foto:'Vino tinto',cuenta:'12 + 12 + 5',q:29,prod:'Convento Las Claras tinto roble',rev:'En Tarifas hay tinto roble y tinto crianza. ¿Las 29 botellas son de roble?'},
+  {foto:'Vino verdejo',cuenta:'12 + 12 + 1',q:25,prod:'Convento Las Claras blanco verdejo'},
+  {foto:'Pinturillas',cuenta:'26 + 38 + 11',q:75,prod:'Pinturas',rev:'«Pinturillas» se ha relacionado con «Pinturas» (3 €). Confírmalo.'},
+  {foto:'Estampitas',cuenta:'200 + 50 + 32 + 25 + 38 + 27 (la primera cuenta está tachada)',q:372,prod:'',rev:'No hay «Estampitas» en Tarifas. Créalas en Tarifas con su precio y elígelas aquí, o déjalas sin guardar.'},
+  {foto:'Camisetas',cuenta:'59 + 9',q:68,prod:'Camiseta',rev:'Por tallas suman 62 (S 10 · M 18 · L 14 · XL 4 · 2XL 4 · 3XL 12), no 68, y la cifra de la S es dudosa. La app tiene una sola «Camiseta», sin tallas.'},
+  {foto:'Cuadernos',cuenta:'24',q:24,prod:'Cuaderno'},
+  {foto:'Lápices',cuenta:'14',q:14,prod:'Lápiz'}
+];
+function htmlInicial(){
+  const P=D.sec.tie.productos;
+  if(!UI.ini) UI.ini=INV_FOTO.map(x=>{ const p=P.find(y=>y.nombre===x.prod); return {pid:p?p.id:'',q:String(x.q),ok:!x.rev}; });
+  const pend=INV_FOTO.filter((x,i)=>x.rev&&!UI.ini[i].ok).length;
+  return `<div class="card ini"><h3 style="margin-top:0">Inventario inicial (hoja del 4 de noviembre)</h3>
+    <p class="small">Cada línea de la hoja está relacionada con un artículo de Tarifas para no duplicar. Las marcadas en amarillo son dudosas: corrige el artículo o la cantidad y marca «Revisado». Las líneas que van al mismo artículo se suman.</p>`+
+    INV_FOTO.map((x,i)=>{ const r=UI.ini[i]; return `<div class="ini-row${x.rev?' dudosa':''}"><div class="small"><b>${esc(x.foto)}</b> · en la hoja: ${esc(x.cuenta)}</div>
+      <div class="ini-ctl"><select data-inip="${i}" aria-label="Artículo para ${esc(x.foto)}"><option value="">— No guardar —</option>${P.map(p=>`<option value="${p.id}"${r.pid===p.id?' selected':''}>${esc(p.nombre)}</option>`).join('')}</select>
+      <input data-iniq="${i}" inputmode="numeric" value="${esc(r.q)}" aria-label="Unidades de ${esc(x.foto)}"></div>
+      ${x.rev?`<p class="small rev">⚠ ${esc(x.rev)}</p><label class="small chk"><input type="checkbox" data-inirev="${i}"${r.ok?' checked':''}> Revisado</label>`:''}</div>`; }).join('')+
+    `<p class="small">${pend?`<b class="bad">Faltan ${pend} líneas por revisar.</b>`:'Todo revisado.'} Los artículos que no aparecen en la hoja quedan «sin contar».</p>
+    <div class="row2"><button class="btn" data-act="iniGuardar">Guardar inventario inicial</button><button class="btn ghost" data-act="iniManual">Lo haré a mano</button></div></div>`;
+}
+function guardarInicial(){
+  const R=UI.ini; if(!R) return;
+  const pend=INV_FOTO.filter((x,i)=>x.rev&&!R[i].ok).length; if(pend) { render(); return toast(`Revisa las ${pend} líneas marcadas antes de guardar`); }
+  const suma={}; R.forEach(r=>{ if(r.pid&&r.q!=='') suma[r.pid]=(suma[r.pid]||0)+parseInt(r.q,10); });
+  const P=D.sec.tie.productos;
+  Object.entries(suma).forEach(([id,v])=>{ const p=P.find(x=>x.id===id); if(!p) return; const antes=stockDe(id); inv().stock[id]=v;
+    movInv({tipo:'inventario inicial',pid:id,nombre:p.nombre,antes,despues:v,cambio:v-(antes||0),motivo:'Inventario inicial (hoja del 4/11/2026)'}); });
+  inv().inicial={fecha:Date.now(),articulos:Object.keys(suma).length}; UI.ini=null; save(); render(); window.scrollTo(0,0);
+  toast(`Inventario inicial guardado: ${Object.keys(suma).length} artículos`);
 }
 /* ---------- descuento libre ---------- */
 const MOTIVOS=['Cliente habitual','Grupo o colectivo','Invitación de la casa','Producto con defecto','Error de cobro','Trabajador o voluntario'];
@@ -1187,7 +1345,9 @@ function pregunta({titulo,html='',ok='Aceptar',cancelar='Cancelar',clase=''}){
   });
 }
 async function pedirCierre(){
-  const t=totales(), s=sec(), pag=D.pagina; if(!(t.uds||t.vy)) return;
+  const t=totales(), s=sec(), pag=D.pagina;
+  if(pag==='tie'&&cestaInfo().n){ UI.view='Vender'; render(); return toast('Hay artículos en la cesta: confirma la venta o vacíala antes de cerrar.'); }
+  if(!(t.uds||t.vy)) return;
   const fila=(a,b)=>`<div><dt>${a}</dt><dd>${b}</dd></div>`, gr=(s.visitas||[]).length;
   const html=(t.tEf&&String(UI.contado).trim()===''?'<p class="aviso">Aún no has escrito el efectivo contado. Puedes cerrar igualmente, pero es mejor contarlo antes.</p>':'')
     +`<dl class="tot">${fila('Efectivo',eur(t.tEf))}${fila('Tarjeta',eur(t.tTj))}${(()=>{ if(!(t.desc&&t.desc.total)) return ''; const L=t.desc.lista, dr=L.filter(d=>d.cargo==='dir'), ds=L.filter(d=>d.cargo!=='dir'), sm=x=>x.reduce((a,d)=>a+d.importe,0); return (ds.length?fila(`Incluye ${ds.length} ${ds.length===1?'descuento':'descuentos'}`,'−'+eur(sm(ds))):'')+(dr.length?fila('A cargo del director',eur(sm(dr))):''); })()}</dl>${cuadre(t)}`
@@ -1234,7 +1394,7 @@ document.addEventListener('click',e=>{
   if(b.dataset.v){ UI.view=b.dataset.v; UI.confirmar=false; UI.editT=false; render(); window.scrollTo(0,0); return; }
   if(b.dataset.add) return venderUno(b.dataset.add);
   /* si el − aparece bajo el dedo durante toques rápidos, ese toque sigue siendo una venta */
-  if(b.dataset.sub){ const id=b.dataset.sub; if(performance.now()-(UI.minusT[id]||-1e9)<400) return venderUno(id); return sumar(id,-1); }
+  if(b.dataset.sub){ const id=b.dataset.sub; if(performance.now()-(UI.minusT[id]||-1e9)<400) return venderUno(id); return D.pagina==='tie'?aCesta(id,-1):sumar(id,-1); }
   if(b.dataset.dsctipo){ UI.dsc.tipo=b.dataset.dsctipo; render(); const i=document.getElementById('dscVal'); if(i) i.focus(); return; }
   if(b.dataset.dscmet){ UI.dsc.metodo=b.dataset.dscmet; render(); return; }
   if(b.dataset.dsccargo!==undefined&&UI.dsc){ UI.dsc.cargo=b.dataset.dsccargo; render(); return; }
@@ -1243,6 +1403,9 @@ document.addEventListener('click',e=>{
     if(UI.borrarP!==id){ UI.borrarP=id; render(); clearTimeout(UI.borrarPT); UI.borrarPT=setTimeout(()=>{ if(UI.borrarP===id){ UI.borrarP=null; render(); } },5000); return; }
     if(p&&(cnt('ef',id)||cnt('tj',id)||cnt('vy',id))){ UI.borrarP=null; render(); return toast('No se puede quitar: tiene ventas en el turno abierto. Ciérralo antes.'); }
     UI.borrarP=null; s.productos=s.productos.filter(x=>x.id!==id); delete s.counts.ef[id]; delete s.counts.tj[id]; if(s.counts.vy) delete s.counts.vy[id]; save(); render(); return toast('Quitado: '+(p?p.nombre:'')); }
+  if(b.dataset.anular){ const id=b.dataset.anular; if(UI.anularV!==id){ UI.anularV=id; render(); clearTimeout(UI.anularT); UI.anularT=setTimeout(()=>{ if(UI.anularV===id){ UI.anularV=null; render(); } },5000); return; } UI.anularV=null; return anularVenta(id); }
+  if(b.dataset.invd){ const id=b.dataset.invd, E=UI.invEd; if(!E) return; const r=E.d[id]=E.d[id]||{delta:0,recuento:''}; r.recuento=''; r.delta+=+b.dataset.paso; pintarFilaAjuste(id); return; }
+  if(b.dataset.invh!=null){ UI.invTodo=b.dataset.invh==='1'; render(); return; }
   if(b.dataset.toast){ const f=toastFn; document.getElementById('toast').classList.add('fuera'); toastFn=null; if(f) f(); return; }
   if(b.dataset.amb||b.dataset.como){ b.closest('.opts').querySelectorAll('button').forEach(x=>x.setAttribute('aria-pressed',x===b)); }
   if(b.dataset.amb){ if(UI.fv.ambito!==b.dataset.amb){ UI.fv.ambito=b.dataset.amb; UI.fv.lugar=''; document.getElementById('lugarBox').innerHTML=lugarHTML(UI.fv); } return; }
@@ -1252,6 +1415,13 @@ document.addEventListener('click',e=>{
   if(b.dataset.exp){ const k=b.dataset.k; const c=k==='actual'?cierreActual():sec().cierres[+k]; if(c) exportar(b.dataset.exp,c); return; }
   const a=b.dataset.act;
   if(a==='editT'){ UI.editT=!UI.editT; UI.borrarP=null; render(); }
+  if(a==='cestaVaciar'){ D.sec.tie.cesta={}; save(); render(); toast('Cesta vacía: no se ha vendido nada'); }
+  if(a==='cestaConfirmar') confirmarVenta();
+  if(a==='invEditar'){ UI.invEd={d:{},motivo:'',nota:''}; render(); window.scrollTo(0,0); }
+  if(a==='invCancelar'){ UI.invEd=null; render(); toast('Sin cambios en el inventario'); }
+  if(a==='invGuardar') guardarAjuste();
+  if(a==='iniGuardar') guardarInicial();
+  if(a==='iniManual'){ inv().inicial={fecha:Date.now(),manual:true}; save(); render(); }
   if(a==='dscAbrir') abrirDescuento();
   if(a==='dscCancelar'){ UI.dsc=null; render(); }
   if(a==='dscAplicar') aplicarDescuento();
@@ -1299,9 +1469,15 @@ document.addEventListener('input',e=>{
   if(e.target.id==='vEnt'){ UI.fv.entradas=e.target.value; previewEntradas(); }
   if(e.target.id==='vPers'){ UI.fv.personas=e.target.value.replace(/\D/g,''); UI.fv.pTocado=e.target.value!==''; }
   if(e.target.id==='vLug'){ UI.fv.lugar=e.target.value; }
+  if(e.target.dataset&&e.target.dataset.recuento&&UI.invEd){ const id=e.target.dataset.recuento, r=UI.invEd.d[id]=UI.invEd.d[id]||{delta:0,recuento:''}; r.recuento=e.target.value.replace(/[^\d]/g,''); if(r.recuento!==e.target.value) e.target.value=r.recuento; if(r.recuento!=='') r.delta=0; pintarFilaAjuste(id,true); }
+  if(e.target.id==='invNota'&&UI.invEd) UI.invEd.nota=e.target.value;
+  if(e.target.dataset&&e.target.dataset.iniq!=null&&UI.ini){ UI.ini[+e.target.dataset.iniq].q=e.target.value.replace(/[^\d]/g,''); }
   if(e.target.id==='contado'){ UI.contado=e.target.value; document.getElementById('diffBox').innerHTML=cuadre(totales()); }
 });
-document.addEventListener('change',e=>{ if(e.target.id==='vLug') UI.fv.lugar=e.target.value; if(e.target.id==='obsTipo') UI.obs.tipo=e.target.value; });
+document.addEventListener('change',e=>{ if(e.target.id==='invMot'&&UI.invEd) UI.invEd.motivo=e.target.value;
+  if(e.target.dataset&&e.target.dataset.inip!=null&&UI.ini){ UI.ini[+e.target.dataset.inip].pid=e.target.value; }
+  if(e.target.dataset&&e.target.dataset.inirev!=null&&UI.ini){ UI.ini[+e.target.dataset.inirev].ok=e.target.checked; }
+  if(e.target.id==='vLug') UI.fv.lugar=e.target.value; if(e.target.id==='obsTipo') UI.obs.tipo=e.target.value; });
 document.addEventListener('toggle',e=>{ if(e.target.classList&&e.target.classList.contains('obs')) UI.obsAbierto=e.target.open; },true);
 document.addEventListener('touchstart',()=>{},{passive:true}); /* iOS: activa :active en los botones */
 document.addEventListener('keydown',e=>{ if(e.key==='Enter'&&(e.target.id==='vEnt'||e.target.id==='vPers')){ e.preventDefault(); const n=document.querySelector('[data-amb]'); if(n) n.focus(); } });
