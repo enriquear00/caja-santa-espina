@@ -868,7 +868,7 @@ function hojasEncuesta(lista,titulo){
   const nomMes=k=>{const [y,m]=k.split('-');return new Date(+y,+m-1,1).toLocaleDateString('es-ES',{month:'long',year:'numeric'});};
   bloque('Por mes',[...mes.entries()].sort((a,b)=>a[0].localeCompare(b[0])).map(([k,n])=>[nomMes(k),n]));
   const cols2='<col min="1" max="1" width="34" customWidth="1"/><col min="2" max="3" width="11" customWidth="1"/><col min="4" max="5" width="9" customWidth="1"/>';
-  return [{nombre:'Visitas',xml:hojaXML(rows,{cols:cols1+'<col min="10" max="11" width="15" customWidth="1"/>',merge:'A1:I1',freeze:4})},{nombre:'Resumen encuesta',xml:hojaXML(r2,{cols:cols2})}];
+  return [{nombre:'Visitas',xml:hojaXML(rows,{cols:cols1,merge:'A1:I1',freeze:4})},{nombre:'Resumen encuesta',xml:hojaXML(r2,{cols:cols2})}];
 }
 function descargarEncuesta(){
   const lista=todasVisitas(); if(!lista.length) return toast('Todavía no hay visitas registradas');
