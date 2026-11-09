@@ -666,7 +666,7 @@ function xlsxDe(c){
     if(d.metodo==='ef'){ S(r,'H',im,2); S(r,'I',0,2); } else { S(r,'H',0,2); S(r,'I',im,2); } S(r,'J',d.cargo==='dir'?d.importe:0,2); S(r,'K',im,3,`H${r}+I${r}`); });
   const nF=L.length+DS.length, last=first+nF-1, tr=Math.max(last+1,first);
   const R=conDesc(resumen(L),{descuentos:DS}), sm=(col,v,s)=>S(tr,col,v,s,nF?`SUM(${col}${first}:${col}${last})`:null);
-  S(tr,'A','TOTAL',1); sm('D',L.reduce((a,x)=>a+x.ef,0),1); sm('E',L.reduce((a,x)=>a+x.tj,0),1); sm('F',L.reduce((a,x)=>a+(x.dir||0),0),1); sm('G',R.uds,1); sm('H',R.tEf,3); sm('I',R.tTj,3); sm('J',R.tDir,3);
+  S(tr,'A','TOTAL',1); sm('D',L.reduce((a,x)=>a+x.ef,0),1); sm('E',L.reduce((a,x)=>a+x.tj,0),1); sm('F',L.reduce((a,x)=>a+(x.dir||0),0),1); sm('G',R.uds,1); sm('H',R.tEf,3); sm('I',R.tTj,3); sm('J',R.tDir,3); sm('K',r2(R.total+R.tDir),3);
   let r=tr+2;
   S(r,'A','Total cobrado en caja (efectivo + tarjeta)',1); S(r,'C',R.total,3,`H${tr}+I${tr}`); r++;
   S(r,'A','A cargo del director (cuenta aparte, no entra en caja)',1); S(r,'C',R.tDir,3,`J${tr}`); r++;
@@ -1025,7 +1025,7 @@ function xlsxPeriodo(k,L,titulo,sub,nombre){
   if(DR){ const r=5+P.length; T(r,'A','Director',6); T(r,'B','A cargo del director, apuntado como descuento antes del cambio ('+DSr.length+')'); T(r,'G',-r2(DR),2); T(r,pD[1],r2(DR),2); P.push(null); }
   const pl=4+P.length, pt=pl+1;
   T(pt,'A','TOTAL',1); if(P.length){ const PP=P.filter(Boolean); T(pt,'F',PP.reduce((a,x)=>a+x.ef+x.tj,0),1,`SUM(F5:F${pl})`); T(pt,'G',r2(PP.reduce((a,x)=>a+x.precio*(x.ef+x.tj),0)-DT-DR),3,`SUM(G5:G${pl})`); T(pt,pD[1],r2(PP.reduce((a,x)=>a+x.precio*(x.dir||0),0)+DR),3,`SUM(${pD[1]}5:${pD[1]}${pl})`); }
-  const cols2='<col min="1" max="1" width="18" customWidth="1"/><col min="2" max="2" width="34" customWidth="1"/><col min="3" max="10" width="13" customWidth="1"/>';
+  const cols2='<col min="1" max="1" width="18" customWidth="1"/><col min="2" max="2" width="34" customWidth="1"/><col min="3" max="5" width="13" customWidth="1"/><col min="6" max="7" width="18" customWidth="1"/><col min="8" max="10" width="17" customWidth="1"/>';
   const hojas=[{nombre:'Cierres',xml:hojaXML(rows,{cols:cols1+'<col min="10" max="11" width="15" customWidth="1"/>',merge:'A1:I1',freeze:4})},{nombre:'Productos',xml:hojaXML(r2s,{cols:cols2,freeze:4})}];
   const fr=sumarFranjas(L); if(fr.length) hojas.push(hojaFranjas(fr,sub,esEnt));
   if(esEnt){ const V=[].concat(...L.map(c=>c.visitas||[])); if(V.length) hojas.push(...hojasEncuesta(V,sub)); }
