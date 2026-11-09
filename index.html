@@ -65,7 +65,7 @@ header{position:sticky;top:-39px;z-index:5;background:var(--bg);padding-block:10
 .cesta-btn svg{width:26px;height:26px;flex:none}
 .ces-sec{padding:4px 14px 6px}
 .ces-sec h3{font:700 19px var(--display);color:var(--c);margin:8px 0 2px}
-.ces-tot{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:4px}
+.ces-tot{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-top:4px}
 .ces-tot div{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:10px}
 .ces-tot b{display:block;font-size:19px;margin-top:4px;font-variant-numeric:tabular-nums}
 .ticket{position:fixed;left:0;right:0;bottom:calc(58px + env(safe-area-inset-bottom,0px));z-index:6;background:var(--surface);border-top:2px solid var(--accent);box-shadow:0 -6px 18px rgba(0,0,0,.08);padding-block:10px;max-width:600px;margin:0 auto;display:flex;flex-direction:column;gap:10px}
@@ -104,7 +104,28 @@ body.con-hoja{overflow:hidden}
 .seg.tres{grid-template-columns:1fr 1fr 1fr} .seg.tres button{font-size:15px;padding:12px 4px}
 .seg button[aria-pressed="true"][data-m="vy"]{background:var(--vy);color:var(--vy-ink)}
 .m-vy .tile.on{border-color:var(--vy);background:var(--vy-soft)} .m-vy .badge{background:var(--vy);color:var(--vy-ink)}
-.dot.vy{background:var(--vy)}
+.dot.vy{background:var(--vy)} .dot.dir{background:var(--gold)}
+.seg button[aria-pressed="true"][data-m="dir"]{background:var(--gold);color:var(--surface)}
+.m-dir .tile.on{border-color:var(--gold);background:color-mix(in srgb,var(--gold) 14%,var(--surface))} .m-dir .badge{background:var(--gold);color:var(--surface)}
+.sum.cuatro{grid-template-columns:repeat(2,minmax(0,1fr))}
+@media (min-width:460px){.sum.cuatro{grid-template-columns:repeat(4,minmax(0,1fr))}}
+.pages.catal{margin:0 0 12px}
+.cr-l{display:flex;flex-wrap:wrap;align-items:center;gap:8px;padding:10px 0;border-bottom:1px solid var(--line);font-variant-numeric:tabular-nums}
+.cr-l:last-child{border-bottom:0}.cr-l .grow{flex:1;min-width:0;word-break:break-word}
+.cr-l .cr-s{font-weight:700;white-space:nowrap;min-width:72px;text-align:right}
+.cr-q{display:flex;align-items:center;gap:4px;flex:none}.cr-q b{min-width:26px;text-align:center}
+.cr-q button{min-width:44px;min-height:44px;border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:10px;font:700 20px var(--body);cursor:pointer;padding:0}
+.cr-q button[disabled]{opacity:.4}
+.cr-tag{font-size:12.5px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:var(--muted)}
+.cr-dir{flex-basis:100%;display:flex;align-items:center;gap:8px;padding-left:2px;font-size:14px;color:var(--gold);font-weight:600}
+.cr-dir .cr-q button{min-width:40px;min-height:40px;font-size:18px}
+.pago{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.pago button{border:2px solid var(--line);background:var(--surface);color:var(--ink);border-radius:12px;padding:14px 6px;min-height:56px;font:700 17px var(--body);cursor:pointer}
+.pago button[aria-pressed="true"][data-pm="ef"]{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.pago button[aria-pressed="true"][data-pm="tj"]{background:var(--card);border-color:var(--card);color:var(--card-ink)}
+.reparto{display:flex;flex-direction:column;gap:2px}.reparto div{display:flex;justify-content:space-between;gap:10px;font-variant-numeric:tabular-nums;font-size:16px}
+.reparto .dirc{color:var(--gold);font-weight:700}
+.sheet-tot .reparto b{display:inline;font-size:17px;line-height:1.3}
 .ent-row{display:flex;gap:6px;align-items:stretch}.ent-row input{flex:1;min-width:0}
 .sep-btn{flex:none;border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:10px;padding:0 10px;font:700 15px var(--body);min-height:48px;cursor:pointer;white-space:nowrap}
 .form-v.editando{outline:2px solid var(--accent);outline-offset:2px}.edit-note{margin:0 0 10px;font-size:15px}
@@ -260,12 +281,14 @@ dialog.hojaD.in{opacity:1}}
         <span><span class="dot tj"></span>Tarjeta <b id="hTj">0,00 €</b></span>
         <span><span class="dot vi"></span><span id="hViL">Visitantes</span> <b id="hVi">0</b></span>
         <span id="hVyW" hidden><span class="dot vy"></span>Venteya <b id="hVy">0</b></span>
+        <span id="hDirW" hidden><span class="dot dir"></span>Director <b id="hDir">0,00 €</b></span>
       </div>
     </div>
     <div class="seg" id="seg" role="group" aria-label="Método de pago">
       <button data-m="ef" aria-pressed="true">Efectivo</button>
       <button data-m="tj" aria-pressed="false">Tarjeta</button>
       <button data-m="vy" aria-pressed="false" hidden>Venteya</button>
+      <button data-m="dir" aria-pressed="false" hidden>Director</button>
     </div>
     <div class="chips" id="chips" role="group" aria-label="Secciones"></div>
   </header>
@@ -333,8 +356,13 @@ function normalizar(){
   ['ent','tie','bar'].forEach(k=>{ D.sec[k].descuentos=Array.isArray(D.sec[k].descuentos)?D.sec[k].descuentos:[]; });
   { const t=D.sec.tie; t.inv=t.inv&&typeof t.inv==='object'?t.inv:{}; t.inv.stock=t.inv.stock&&typeof t.inv.stock==='object'?t.inv.stock:{}; t.inv.movs=Array.isArray(t.inv.movs)?t.inv.movs:[]; t.inv.inicial=t.inv.inicial||null;
     t.cesta=t.cesta&&typeof t.cesta==='object'?t.cesta:{}; t.ventas=Array.isArray(t.ventas)?t.ventas:[]; }
+  ['ent','tie','bar'].forEach(k=>{ D.sec[k].counts.dir=D.sec[k].counts.dir||{}; });
+  D.sec.ent.ventas=Array.isArray(D.sec.ent.ventas)?D.sec.ent.ventas:[];
+  // carrito común (entradas + tienda); se hereda lo que hubiera en la antigua cesta de la tienda
+  D.carro=D.carro&&typeof D.carro==='object'?D.carro:{}; D.carro.ent=D.carro.ent||{}; D.carro.tie=D.carro.tie||{};
+  if(Object.keys(D.sec.tie.cesta).length){ Object.entries(D.sec.tie.cesta).forEach(([id,q])=>{ D.carro.tie[id]=(D.carro.tie[id]||0)+q; }); D.sec.tie.cesta={}; }
   D.sec.ent.visitas=D.sec.ent.visitas||[]; D.envio=Object.assign({url:'',clave:'',movil:''},D.envio||{}); D.cola=Array.isArray(D.cola)?D.cola:[];
-  if(!D.sec[D.pagina]) D.pagina='ent'; if(!['ef','tj','vy'].includes(D.metodo)) D.metodo='ef';
+  if(!D.sec[D.pagina]) D.pagina='ent'; if(!['ef','tj','vy','dir'].includes(D.metodo)) D.metodo='ef';
 }
 normalizar();
 let guardadoOK=true;
@@ -355,39 +383,43 @@ const cats = () => DEF[D.pagina].cats;
 const catOrd = c => { const i=cats().indexOf(c); return i<0?99:i; };
 
 /* ================= cálculos ================= */
+/* Cada unidad vendida se apunta UNA vez en uno de estos destinos: ef (efectivo), tj (tarjeta), dir (a cargo del director)
+   o vy (Venteya, pagada online). La caja (total) es solo efectivo + tarjeta; lo del director va en su propia cuenta. */
 const cnt=(m,id)=>(sec().counts[m]||{})[id]||0;
+const lineaDe=(p,c)=>{ const ef=c('ef'), tj=c('tj'), dir=c('dir'), vy=c('vy'); return {cat:p.cat||'Otros',nombre:p.nombre,precio:p.precio,ef,tj,dir,vy,cant:ef+tj+dir,subtotal:r2(p.precio*(ef+tj+dir))}; };
 function lineas(){
-  return sec().productos.filter(p=>cnt('ef',p.id)||cnt('tj',p.id)||cnt('vy',p.id)).map(p=>{
-    const ef=cnt('ef',p.id), tj=cnt('tj',p.id), vy=cnt('vy',p.id);
-    return {cat:p.cat||'Otros',nombre:p.nombre,precio:p.precio,ef,tj,vy,cant:ef+tj,subtotal:r2(p.precio*(ef+tj))};
-  }).sort((a,b)=>catOrd(a.cat)-catOrd(b.cat));
+  return sec().productos.map(p=>lineaDe(p,m=>cnt(m,p.id))).filter(x=>x.cant||x.vy).sort((a,b)=>catOrd(a.cat)-catOrd(b.cat));
 }
 function resumen(l){
-  const tEf=r2(l.reduce((a,x)=>a+x.precio*x.ef,0)), tTj=r2(l.reduce((a,x)=>a+x.precio*x.tj,0));
+  const tEf=r2(l.reduce((a,x)=>a+x.precio*x.ef,0)), tTj=r2(l.reduce((a,x)=>a+x.precio*x.tj,0)), tDir=r2(l.reduce((a,x)=>a+x.precio*(x.dir||0),0));
   const vy=l.reduce((a,x)=>a+(x.vy||0),0), tVy=r2(l.reduce((a,x)=>a+x.precio*(x.vy||0),0));
-  return {tEf,tTj,total:r2(tEf+tTj),uds:l.reduce((a,x)=>a+x.cant,0),vy,tVy};
+  return {tEf,tTj,tDir,dirUds:tDir,total:r2(tEf+tTj),uds:l.reduce((a,x)=>a+x.cant,0),vy,tVy};
 }
-function descDe(s){ const L=(s&&s.descuentos)||[]; const ef=r2(L.filter(x=>x.metodo==='ef').reduce((a,x)=>a+x.importe,0)), tj=r2(L.filter(x=>x.metodo==='tj').reduce((a,x)=>a+x.importe,0)); return {ef,tj,total:r2(ef+tj),lista:L}; }
-function conDesc(R,s){ const d=descDe(s); return Object.assign({},R,{bruto:R.total,tEf:r2(R.tEf-d.ef),tTj:r2(R.tTj-d.tj),total:r2(R.total-d.total),desc:d}); }
+// descuentos: los normales reducen la caja; los antiguos «cargos al director» (cargo:'dir', de antes de la cuenta propia) también, y suman a la cuenta del director
+function descDe(s){ const L=(s&&s.descuentos)||[]; const ef=r2(L.filter(x=>x.metodo==='ef').reduce((a,x)=>a+x.importe,0)), tj=r2(L.filter(x=>x.metodo==='tj').reduce((a,x)=>a+x.importe,0)), dir=r2(L.filter(x=>x.cargo==='dir').reduce((a,x)=>a+x.importe,0)); return {ef,tj,dir,total:r2(ef+tj),lista:L}; }
+function conDesc(R,s){ const d=descDe(s); return Object.assign({},R,{bruto:R.total,tEf:r2(R.tEf-d.ef),tTj:r2(R.tTj-d.tj),total:r2(R.total-d.total),tDir:r2((R.tDir||0)+d.dir),desc:d}); }
 function totales(){ const l=lineas(); return {l,...conDesc(resumen(l),sec())}; }
 
 /* ================= acciones ================= */
 function sumar(id,d){
   const s=sec(); let m=D.metodo; if(m==='vy'&&D.pagina!=='ent') m='ef';
-  if(d<0 && !cnt(m,id) && m!=='vy') m = ['ef','tj'].find(x=>cnt(x,id)) || m;
+  if(d<0 && !cnt(m,id) && m!=='vy') m = ['ef','tj','dir'].find(x=>cnt(x,id)) || m;
   if(d<0 && !cnt(m,id)) return;
   s.counts[m]=s.counts[m]||{};
   const prod=s.productos.find(x=>x.id===id); if(prod) apuntarHora(s,prod.precio,m,d);
   const n=cnt(m,id)+d;
   if(n<=0) delete s.counts[m][id]; else s.counts[m][id]=n;
-  if(D.pagina==='bar'){ const q=(UI.ticket[id]||0)+d; if(q>0) UI.ticket[id]=q; else delete UI.ticket[id]; if(!Object.keys(UI.ticket).length){ UI.cambio=false; UI.tkDesc=0; } }
+  if(D.pagina==='bar'&&m!=='dir'){ const q=(UI.ticket[id]||0)+d; if(q>0) UI.ticket[id]=q; else delete UI.ticket[id]; if(!Object.keys(UI.ticket).length){ UI.cambio=false; UI.tkDesc=0; } }
   save(); if(!UI.home&&UI.view==='Vender') pintarVenta(id); else render();
 }
 /* --- repintado de una venta: solo lo que cambia, sin recrear la ficha bajo el dedo --- */
+/* En Entradas (salvo Venteya) y en Tienda las fichas llenan el carrito común; en el bar y en Venteya se apuntan al momento. */
+const enCarro=()=>(D.pagina==='ent'&&D.metodo!=='vy')||D.pagina==='tie';
+const verSec=()=>D.pagina==='ent'&&D.metodo!=='vy'&&UI.catal==='tie'?'tie':D.pagina;
 function pintarCelda(id){
-  const p=sec().productos.find(x=>x.id===id), cel=document.querySelector(`.cell[data-cell="${CSS.escape(id)}"]`); if(!p||!cel) return;
-  const m=D.metodo, tie=D.pagina==='tie', c=tie?(cesta()[id]||0):cnt(m,id), any=tie?c:m==='vy'?c:(c||cnt('ef',id)+cnt('tj',id)), tile=cel.querySelector('.tile');
-  if(tie){ const st=tile.querySelector('.st'); if(st) st.outerHTML=htmlStock(id); }
+  const k=verSec(), p=D.sec[k].productos.find(x=>x.id===id), cel=document.querySelector(`.cell[data-cell="${CSS.escape(id)}"]`); if(!p||!cel) return;
+  const m=D.metodo, cr=enCarro(), c=cr?(D.carro[k][id]||0):cnt(m,id), any=cr?c:m==='vy'?c:(c||cnt('ef',id)+cnt('tj',id)+cnt('dir',id)), tile=cel.querySelector('.tile');
+  if(k==='tie'){ const st=tile.querySelector('.st'); if(st) st.outerHTML=htmlStock(id); }
   tile.classList.toggle('on',!!c);
   let bd=tile.querySelector('.badge');
   if(c){ if(!bd){ bd=document.createElement('span'); bd.className='badge'; tile.appendChild(bd); } bd.textContent=c; } else if(bd) bd.remove();
@@ -404,21 +436,22 @@ function pintarTotales(t){
   document.getElementById('hViL').textContent=esEnt?'Visitantes':esBar?'Consumiciones':'Artículos';
   document.getElementById('hVi').textContent=t.uds+(esEnt?t.vy:0);
   document.getElementById('hVyW').hidden=!(esEnt&&t.vy); document.getElementById('hVy').textContent=t.vy;
+  document.getElementById('hDirW').hidden=!t.tDir||!!UI.soloVy; document.getElementById('hDir').textContent=eur(t.tDir||0);
 }
 function pintarVenta(id){
   pintarCelda(id); pintarTotales(totales()); renderTicket();
   const r=document.getElementById('dscRes'); if(r) r.innerHTML=textoDescuento();
 }
 function venderUno(id){
-  if(D.pagina==='tie'){ UI.minusT[id]=performance.now(); return aCesta(id,1); }
+  if(enCarro()){ UI.minusT[id]=performance.now(); return aCarro(verSec(),id,1); }
   const pr=sec().productos.find(x=>x.id===id), m=D.metodo, pag=D.pagina; UI.minusT[id]=performance.now(); sumar(id,1);
-  if(pr) toast(`+1 ${pr.nombre}${m==='tj'?' · tarjeta':m==='vy'?' · Venteya':''}`,'Deshacer',()=>{ if(D.pagina!==pag) return toast('Para deshacer, vuelve a esa caja y usa el botón −'); const prev=D.metodo; D.metodo=m; sumar(id,-1); D.metodo=prev; save(); render(); toast('Deshecho: '+pr.nombre); });
+  if(pr) toast(`+1 ${pr.nombre}${m==='tj'?' · tarjeta':m==='vy'?' · Venteya':m==='dir'?' · a cargo del director':''}`,'Deshacer',()=>{ if(D.pagina!==pag) return toast('Para deshacer, vuelve a esa caja y usa el botón −'); const prev=D.metodo; D.metodo=m; sumar(id,-1); D.metodo=prev; save(); render(); toast('Deshecho: '+pr.nombre); });
 }
 /* --- ventas por franja horaria --- */
 function apuntarHora(s,precio,m,d){
   s.horas=s.horas||{}; let h=new Date().getHours();
   if(d<0){ let k=h; while(k>=0&&!(s.horas[k]&&s.horas[k].uds>0)) k--; if(k<0){ k=23; while(k>h&&!(s.horas[k]&&s.horas[k].uds>0)) k--; if(k<=h) return; } h=k; }
-  const o=s.horas[h]=s.horas[h]||{uds:0,ef:0,tj:0}; o.uds+=d; if(m==='vy') o.vy=(o.vy||0)+d; else o[m]=r2(o[m]+d*precio); if(o.uds<=0) delete s.horas[h];
+  const o=s.horas[h]=s.horas[h]||{uds:0,ef:0,tj:0}; o.uds+=d; if(m==='vy') o.vy=(o.vy||0)+d; else o[m]=r2((o[m]||0)+d*precio); if(o.uds<=0) delete s.horas[h];
 }
 const tramo=h=>h==null?'Sin hora':`${String(h).padStart(2,'0')}:00–${String((h+1)%24).padStart(2,'0')}:00`;
 function franjasDe(s,t){
@@ -450,12 +483,12 @@ const esEntC=()=>D.pagina==='ent';
 function cierreActual(){
   const t=totales(), s=sec();
   const c = UI.contado.trim()==='' ? null : num(UI.contado);
-  return {id:uid()+uid(),pagina:D.pagina,gestor:UI.gestor?GESTORES[UI.gestor].nom:'',fecha:Date.now(),inicio:s.inicio,total:t.total,efectivo:t.tEf,tarjeta:t.tTj,unidades:t.uds,venteya:esEntC()?{uds:t.vy,importe:t.tVy}:undefined,lineas:t.l,contado:(c==null||isNaN(c))?null:c,franjas:franjasDe(s,t),visitas:D.pagina==='ent'?(s.visitas||[]).slice():undefined,descuentos:(s.descuentos||[]).length?s.descuentos.slice():undefined,director:r2((s.descuentos||[]).filter(d=>d.cargo==='dir').reduce((a,d)=>a+d.importe,0))||undefined,bruto:t.bruto};
+  return {id:uid()+uid(),pagina:D.pagina,gestor:UI.gestor?GESTORES[UI.gestor].nom:'',fecha:Date.now(),inicio:s.inicio,total:t.total,efectivo:t.tEf,tarjeta:t.tTj,unidades:t.uds,venteya:esEntC()?{uds:t.vy,importe:t.tVy}:undefined,lineas:t.l,contado:(c==null||isNaN(c))?null:c,franjas:franjasDe(s,t),visitas:D.pagina==='ent'?(s.visitas||[]).slice():undefined,descuentos:(s.descuentos||[]).length?s.descuentos.slice():undefined,director:r2(t.tDir||0)||undefined,bruto:t.bruto,ventas:D.pagina==='ent'&&(s.ventas||[]).length?s.ventas.slice():undefined};
 }
 function cerrarCaja(){
   const c=cierreActual(), s=sec();
   s.cierres.unshift(c); s.cierres=s.cierres.slice(0,400);
-  s.counts={ef:{},tj:{},vy:{}}; s.horas={}; s.descuentos=[]; UI.dsc=null; UI.tkDesc=0; if(D.pagina==='ent') s.visitas=[]; if(D.pagina==='bar'){ UI.ticket={}; UI.cambio=false; UI.entrega=''; } if(D.pagina==='tie'){ s.ventas=[]; s.cesta={}; } s.inicio=Date.now(); UI.confirmar=false; UI.contado='';
+  s.counts={ef:{},tj:{},vy:{}}; s.horas={}; s.descuentos=[]; UI.dsc=null; UI.tkDesc=0; s.counts.dir={}; if(D.pagina==='ent'){ s.visitas=[]; s.ventas=[]; } if(D.pagina==='bar'){ UI.ticket={}; UI.cambio=false; UI.entrega=''; } if(D.pagina==='tie'){ s.ventas=[]; } s.inicio=Date.now(); UI.confirmar=false; UI.contado='';
   D.cola.push({id:c.id,cierre:c}); D.cola=D.cola.slice(-300);
   save(); render(); toast('Caja cerrada: '+eur(c.total)); enviarCola();
 }
@@ -520,14 +553,16 @@ function pdfDe(c){
     P.text(M+12,70,'Cierre de caja · '+(TIT[c.pagina]||'')+(c.gestor?' · Gestiona: '+c.gestor:''),{size:10,color:grey});
     P.text(W-M,52,'Desde '+fmtF(c.inicio),{size:9,color:grey,align:'right'});
     P.text(W-M,66,'Hasta '+fmtF(c.fecha),{size:9,color:grey,align:'right'}); };
-  const X={pvp:330,ef:385,tj:435,uds:480,imp:W-M};
+  const hayDir=(c.lineas||[]).some(x=>x.dir), dirU=r2((c.lineas||[]).reduce((a,x)=>a+x.precio*(x.dir||0),0));
+  const X=hayDir?{pvp:300,ef:345,tj:390,dir:435,uds:480,imp:W-M}:{pvp:330,ef:385,tj:435,uds:480,imp:W-M};
   const head=y=>{ P.text(M,y,'ARTÍCULO',{size:7.5,bold:true,color:grey}); P.text(X.pvp,y,'PVP',{size:7.5,bold:true,color:grey,align:'right'});
     P.text(X.ef,y,'EFEC.',{size:7.5,bold:true,color:grey,align:'right'}); P.text(X.tj,y,'TARJ.',{size:7.5,bold:true,color:grey,align:'right'});
+    if(hayDir) P.text(X.dir,y,'DIR.',{size:7.5,bold:true,color:grey,align:'right'});
     P.text(X.uds,y,'UDS',{size:7.5,bold:true,color:grey,align:'right'}); P.text(X.imp,y,'IMPORTE',{size:7.5,bold:true,color:grey,align:'right'});
     P.line(M,y+5,W-M,y+5,[180,172,174],0.8); return y+19; };
   cab();
-  const cajas=[['TOTAL',nf(c.total)+' €'],['EFECTIVO',nf(c.efectivo)+' €'],['TARJETA',nf(c.tarjeta)+' €'],[esEnt?'VISITANTES':'UNIDADES',String((c.unidades!=null?c.unidades:R.uds)+(c.venteya?c.venteya.uds:0))]];
-  const bw=(W-2*M-24)/4;
+  const cajas=[['TOTAL CAJA',nf(c.total)+' €'],['EFECTIVO',nf(c.efectivo)+' €'],['TARJETA',nf(c.tarjeta)+' €'],['DIRECTOR',nf(c.director||0)+' €'],[esEnt?'VISITANTES':'UNIDADES',String((c.unidades!=null?c.unidades:R.uds)+(c.venteya?c.venteya.uds:0))]];
+  const bw=(W-2*M-8*(cajas.length-1))/cajas.length;
   cajas.forEach((b,i)=>{ const x=M+i*(bw+8); P.rect(x,90,bw,46,[248,246,245],[226,220,219]);
     P.text(x+10,106,b[0],{size:7.5,bold:true,color:grey}); P.text(x+10,126,b[1],{size:14,bold:true}); });
   let y=head(164), cat=null;
@@ -539,6 +574,7 @@ function pdfDe(c){
     P.text(X.pvp,y,x.precio?nf(x.precio)+' €':'Gratuita',{size:9.5,align:'right',color:x.precio?[34,29,31]:[154,122,44]});
     P.text(X.ef,y,x.ef?String(x.ef):'·',{size:9.5,align:'right',color:grey});
     P.text(X.tj,y,x.tj?String(x.tj):'·',{size:9.5,align:'right',color:grey});
+    if(hayDir) P.text(X.dir,y,x.dir?String(x.dir):'·',{size:9.5,align:'right',color:grey});
     P.text(X.uds,y,String(x.cant),{size:9.5,align:'right'});
     P.text(X.imp,y,nf(x.subtotal)+' €',{size:9.5,align:'right'});
     P.line(M,y+5,W-M,y+5); y+=17;
@@ -547,10 +583,11 @@ function pdfDe(c){
     c.descuentos.forEach(d=>{ salto(17); P.text(M,y,fit((d.cargo==='dir'?'A cargo del director: ':'')+d.motivo+' ('+(d.tipo==='pct'?nf(d.valor).replace(/,00$/,'')+' % de '+nf(d.base)+' €':'importe fijo')+')',9.5,false,X.pvp-M+40),{size:9.5});
       P.text(d.metodo==='ef'?X.ef:X.tj,y,d.metodo==='ef'?'efec.':'tarj.',{size:9.5,align:'right',color:grey});
       P.text(X.imp,y,'−'+nf(d.importe)+' €',{size:9.5,align:'right',color:[164,70,42]}); P.line(M,y+5,W-M,y+5); y+=17; }); }
+  if(dirU){ salto(17); P.text(M,y,'A cargo del director (no se cobra en caja)',{size:9.5}); P.text(X.imp,y,'−'+nf(dirU)+' €',{size:9.5,align:'right',color:[164,70,42]}); P.line(M,y+5,W-M,y+5); y+=17; }
   salto(40); y+=4; P.line(M,y-8,W-M,y-8,wine,1.2); y+=6;
-  P.text(M,y,'Total',{size:12,bold:true}); P.text(X.uds,y,String(c.unidades!=null?c.unidades:R.uds),{size:12,bold:true,align:'right'});
+  P.text(M,y,'Total cobrado en caja',{size:12,bold:true}); P.text(X.uds,y,String(c.unidades!=null?c.unidades:R.uds),{size:12,bold:true,align:'right'});
   P.text(X.imp,y,nf(c.total)+' €',{size:12,bold:true,align:'right'}); y+=26;
-  if(c.director){ salto(20); P.text(M,y,'A cargo del director: '+nf(c.director)+' €',{size:10,bold:true,color:wine}); P.text(W-M,y,'no cobrado en caja, se le carga a él',{size:10,align:'right',color:grey}); y+=18; }
+  if(c.director){ salto(20); P.text(M,y,'A cargo del director: '+nf(c.director)+' €',{size:10,bold:true,color:wine}); P.text(W-M,y,'cuenta aparte: no entra en la caja',{size:10,align:'right',color:grey}); y+=18; }
   if(c.venteya&&c.venteya.uds){ salto(20); P.text(M,y,'Entradas Venteya (pagadas online): '+c.venteya.uds,{size:10,bold:true,color:[15,157,128]}); P.text(W-M,y,nf(c.venteya.importe)+' € · no entran en la caja',{size:10,align:'right',color:grey}); y+=18; }
   if(c.contado!=null){ salto(20); const d=r2(c.contado-c.efectivo);
     P.text(M,y,'Efectivo contado en caja: '+nf(c.contado)+' €',{size:10});
@@ -617,29 +654,30 @@ function xlsxDe(c){
   S(2,'A','Cierre de caja · '+(TIT[c.pagina]||'')+(c.gestor?' · Gestiona: '+c.gestor:''),7);
   S(3,'A','Desde',1); S(3,'B',fmtF(c.inicio));
   S(4,'A','Hasta',1); S(4,'B',fmtF(c.fecha));
-  const H=['Sección','Artículo','PVP','Uds efectivo','Uds tarjeta','Unidades','Importe efectivo','Importe tarjeta','Importe'];
-  H.forEach((h,i)=>S(6,'ABCDEFGHI'[i],h,5));
+  const H=['Sección','Artículo','PVP','Uds efectivo','Uds tarjeta','Uds director','Unidades','Importe efectivo','Importe tarjeta','Importe director','Importe'];
+  H.forEach((h,i)=>S(6,'ABCDEFGHIJK'[i],h,5));
   const first=7;
-  L.forEach((x,i)=>{ const r=first+i;
-    S(r,'A',x.cat,6); S(r,'B',x.nombre); S(r,'C',x.precio,2); S(r,'D',x.ef); S(r,'E',x.tj);
-    S(r,'F',x.cant,0,`D${r}+E${r}`); S(r,'G',r2(x.precio*x.ef),2,`C${r}*D${r}`); S(r,'H',r2(x.precio*x.tj),2,`C${r}*E${r}`); S(r,'I',x.subtotal,3,`C${r}*F${r}`); });
+  L.forEach((x,i)=>{ const r=first+i, dr=x.dir||0;
+    S(r,'A',x.cat,6); S(r,'B',x.nombre); S(r,'C',x.precio,2); S(r,'D',x.ef); S(r,'E',x.tj); S(r,'F',dr);
+    S(r,'G',x.cant,0,`D${r}+E${r}+F${r}`); S(r,'H',r2(x.precio*x.ef),2,`C${r}*D${r}`); S(r,'I',r2(x.precio*x.tj),2,`C${r}*E${r}`); S(r,'J',r2(x.precio*dr),2,`C${r}*F${r}`); S(r,'K',x.subtotal,3,`C${r}*G${r}`); });
   const DS=c.descuentos||[];
   DS.forEach((d,i)=>{ const r=first+L.length+i, im=-d.importe;
     S(r,'A',d.cargo==='dir'?'Director':'Descuento',6); S(r,'B',(d.cargo==='dir'?'A cargo del director: ':'')+d.motivo+(d.tipo==='pct'?` (${nf(d.valor).replace(/,00$/,'')} % de ${nf(d.base)} €)`:''));
-    if(d.metodo==='ef'){ S(r,'G',im,2); S(r,'H',0,2); } else { S(r,'G',0,2); S(r,'H',im,2); } S(r,'I',im,3,`G${r}+H${r}`); });
+    if(d.metodo==='ef'){ S(r,'H',im,2); S(r,'I',0,2); } else { S(r,'H',0,2); S(r,'I',im,2); } S(r,'J',d.cargo==='dir'?d.importe:0,2); S(r,'K',im,3,`H${r}+I${r}`); });
   const nF=L.length+DS.length, last=first+nF-1, tr=Math.max(last+1,first);
   const R=conDesc(resumen(L),{descuentos:DS}), sm=(col,v,s)=>S(tr,col,v,s,nF?`SUM(${col}${first}:${col}${last})`:null);
-  S(tr,'A','TOTAL',1); sm('D',L.reduce((a,x)=>a+x.ef,0),1); sm('E',L.reduce((a,x)=>a+x.tj,0),1); sm('F',R.uds,1); sm('G',R.tEf,3); sm('H',R.tTj,3); sm('I',R.total,3);
+  S(tr,'A','TOTAL',1); sm('D',L.reduce((a,x)=>a+x.ef,0),1); sm('E',L.reduce((a,x)=>a+x.tj,0),1); sm('F',L.reduce((a,x)=>a+(x.dir||0),0),1); sm('G',R.uds,1); sm('H',R.tEf,3); sm('I',R.tTj,3); sm('J',R.tDir,3);
   let r=tr+2;
+  S(r,'A','Total cobrado en caja (efectivo + tarjeta)',1); S(r,'C',R.total,3,`H${tr}+I${tr}`); r++;
+  S(r,'A','A cargo del director (cuenta aparte, no entra en caja)',1); S(r,'C',R.tDir,3,`J${tr}`); r++;
   const vyU=c.venteya?c.venteya.uds:0;
   if(esEnt&&vyU){ S(r,'A','Entradas Venteya (pagadas online, no entran en caja)',1); S(r,'C',vyU,1); S(r,'D',c.venteya.importe,3); r++;
     LT.filter(x=>x.vy).forEach(x=>{ S(r,'B','   '+x.nombre); S(r,'C',x.vy); r++; }); }
-  if(c.director){ S(r,'A','A cargo del director (no cobrado en caja)',1); S(r,'C',c.director,2); r++; }
-  if(esEnt){ S(r,'A','Visitantes',1); S(r,'C',R.uds+vyU,1,vyU?null:`F${tr}`); r++; }
+  if(esEnt){ S(r,'A','Visitantes',1); S(r,'C',R.uds+vyU,1,vyU?null:`G${tr}`); r++; }
   if(c.contado!=null){ S(r,'A','Efectivo contado en caja',1); S(r,'C',c.contado,2); r++;
-    S(r,'A','Diferencia (contado − ventas en efectivo)',1); S(r,'C',r2(c.contado-R.tEf),3,`C${r-1}-G${tr}`); r++; }
-  const cols='<col min="1" max="1" width="13" customWidth="1"/><col min="2" max="2" width="46" customWidth="1"/><col min="3" max="3" width="11" customWidth="1"/><col min="4" max="6" width="12" customWidth="1"/><col min="7" max="8" width="16" customWidth="1"/><col min="9" max="9" width="13" customWidth="1"/>';
-  const hojas=[{nombre:NOMSEC[c.pagina]||'Caja',xml:hojaXML(rows,{cols,merge:'A1:I1',freeze:6})}];
+    S(r,'A','Diferencia (contado − ventas en efectivo)',1); S(r,'C',r2(c.contado-R.tEf),3,`C${r-1}-H${tr}`); r++; }
+  const cols='<col min="1" max="1" width="13" customWidth="1"/><col min="2" max="2" width="46" customWidth="1"/><col min="3" max="3" width="11" customWidth="1"/><col min="4" max="7" width="12" customWidth="1"/><col min="8" max="10" width="16" customWidth="1"/><col min="11" max="11" width="13" customWidth="1"/>';
+  const hojas=[{nombre:NOMSEC[c.pagina]||'Caja',xml:hojaXML(rows,{cols,merge:'A1:K1',freeze:6})}];
   if(c.franjas&&c.franjas.length) hojas.push(hojaFranjas(c.franjas,'Cierre del '+fmtF(c.fecha),esEnt));
   if(esEnt&&c.visitas&&c.visitas.length) hojas.push(...hojasEncuesta(c.visitas,'Cierre del '+fmtF(c.fecha)));
   return libroXLSX(hojas);
@@ -830,7 +868,7 @@ function hojasEncuesta(lista,titulo){
   const nomMes=k=>{const [y,m]=k.split('-');return new Date(+y,+m-1,1).toLocaleDateString('es-ES',{month:'long',year:'numeric'});};
   bloque('Por mes',[...mes.entries()].sort((a,b)=>a[0].localeCompare(b[0])).map(([k,n])=>[nomMes(k),n]));
   const cols2='<col min="1" max="1" width="34" customWidth="1"/><col min="2" max="3" width="11" customWidth="1"/><col min="4" max="5" width="9" customWidth="1"/>';
-  return [{nombre:'Visitas',xml:hojaXML(rows,{cols:cols1,merge:'A1:I1',freeze:4})},{nombre:'Resumen encuesta',xml:hojaXML(r2,{cols:cols2})}];
+  return [{nombre:'Visitas',xml:hojaXML(rows,{cols:cols1+'<col min="10" max="11" width="15" customWidth="1"/>',merge:'A1:I1',freeze:4})},{nombre:'Resumen encuesta',xml:hojaXML(r2,{cols:cols2})}];
 }
 function descargarEncuesta(){
   const lista=todasVisitas(); if(!lista.length) return toast('Todavía no hay visitas registradas');
@@ -844,30 +882,31 @@ function descargarEncuesta(){
 const TIT={ent:'Venta de entradas',tie:'Tienda',bar:'Bar'};
 const NOMSEC={ent:'Entradas',tie:'Tienda',bar:'Bar',vy:'Entradas Venteya'};
 const COLPDF={ent:[122,35,53],tie:[61,107,58],bar:[138,75,31]};
-function abrirSeccion(k){ UI.dsc=null; UI.soloVy=k==='vy'; if(k==='vy'){ k='ent'; D.metodo='vy'; } else if(D.metodo==='vy') D.metodo='ef'; D.pagina=k; UI.home=false; UI.view='Vender'; UI.filtro='Todo'; UI.confirmar=false; UI.contado=''; UI.cambio=false; save(); render(); window.scrollTo(0,0); entrar();  if(k==='tie') sincronizarInv(); }
+function abrirSeccion(k){ UI.dsc=null; UI.catal='ent'; UI.carroAbierto=false; UI.soloVy=k==='vy'; if(k==='vy'){ k='ent'; D.metodo='vy'; } else if(D.metodo==='vy') D.metodo='ef'; D.pagina=k; UI.home=false; UI.view='Vender'; UI.filtro='Todo'; UI.confirmar=false; UI.contado=''; UI.cambio=false; save(); render(); window.scrollTo(0,0); entrar();  if(k==='tie') sincronizarInv(); }
 function lineasDe(k){
   const s=D.sec[k==='vy'?'ent':k], c=m=>id=>(s.counts[m]||{})[id]||0, ord=x=>{const i=DEF[k==='vy'?'ent':k].cats.indexOf(x);return i<0?99:i;};
   return s.productos.map(p=>{ const ef=c('ef')(p.id), tj=c('tj')(p.id), vy=c('vy')(p.id);
-    return k==='vy'?{cat:p.cat||'Otros',nombre:p.nombre,precio:p.precio,cant:vy,ef:0,tj:0,importe:r2(p.precio*vy)}:{cat:p.cat||'Otros',nombre:p.nombre,precio:p.precio,cant:ef+tj,ef,tj,importe:r2(p.precio*(ef+tj))}; })
+    const dir=c('dir')(p.id); return k==='vy'?{cat:p.cat||'Otros',nombre:p.nombre,precio:p.precio,cant:vy,ef:0,tj:0,dir:0,importe:r2(p.precio*vy)}:{cat:p.cat||'Otros',nombre:p.nombre,precio:p.precio,cant:ef+tj+dir,ef,tj,dir,importe:r2(p.precio*(ef+tj+dir))}; })
     .filter(x=>x.cant).sort((a,b)=>ord(a.cat)-ord(b.cat));
 }
 function renderCesta(el){
   const secs=[['ent','Entradas'],['vy','Entradas Venteya'],['tie','Tienda'],['bar','Bar']];
-  let G={ef:0,tj:0}, h=`<div class="home-in pad"><div class="secbar"><button class="back" data-cesta="0">‹ Inicio</button><span class="secname">Resumen del turno</span></div>
+  let G={ef:0,tj:0,dir:0}, h=`<div class="home-in pad"><div class="secbar"><button class="back" data-cesta="0">‹ Inicio</button><span class="secname">Resumen del turno</span></div>
     <p class="small" style="margin:0">Lo vendido en los turnos abiertos ahora mismo, sin contar lo ya cerrado. Solo para consultar: no cambia nada.</p>`;
   secs.filter(([k])=>!UI.gestor||GESTORES[UI.gestor].ces.includes(k)).forEach(([k,nom])=>{
     const L=lineasDe(k), dd=k==='vy'?{ef:0,tj:0,lista:[]}:descDe(D.sec[k]), ef=r2(L.reduce((a,x)=>a+x.precio*x.ef,0)-dd.ef), tj=r2(L.reduce((a,x)=>a+x.precio*x.tj,0)-dd.tj), u=L.reduce((a,x)=>a+x.cant,0), imp=r2(L.reduce((a,x)=>a+x.importe,0));
-    if(k!=='vy'){ G.ef+=ef; G.tj+=tj; }
+    const dr=k==='vy'?0:r2(L.reduce((a,x)=>a+x.precio*x.dir,0)+dd.dir); if(k!=='vy'){ G.ef+=ef; G.tj+=tj; G.dir+=dr; }
     const desde=k==='vy'?D.sec.ent.inicio:D.sec[k].inicio;
-    h+=`<div class="card ces-sec hb-${k}"><h3>${nom}</h3><p class="small" style="margin:0 0 6px">${u?`${u} ${k==='bar'?'consumiciones':k==='tie'?'artículos':'entradas'} · ${k==='vy'?`${eur(imp)} pagados online`:`${eur(ef+tj)} (efectivo ${eur(ef)} · tarjeta ${eur(tj)})`}`:'Nada en este turno'} · desde ${new Date(desde).toLocaleTimeString('es-ES',{hour:'2-digit',minute:'2-digit'})}</p>`;
+    h+=`<div class="card ces-sec hb-${k}"><h3>${nom}</h3><p class="small" style="margin:0 0 6px">${u?`${u} ${k==='bar'?'consumiciones':k==='tie'?'artículos':'entradas'} · ${k==='vy'?`${eur(imp)} pagados online`:`${eur(ef+tj)} (efectivo ${eur(ef)} · tarjeta ${eur(tj)})${dr?` · director ${eur(dr)} aparte`:''}`}`:'Nada en este turno'} · desde ${new Date(desde).toLocaleTimeString('es-ES',{hour:'2-digit',minute:'2-digit'})}</p>`;
     let cat=null;
     L.forEach(x=>{ if(x.cat!==cat){ cat=x.cat; h+=`<div class="row sub">${esc(cat)}</div>`; }
       h+=`<div class="row"><span class="grow">${esc(x.nombre)}</span><span class="q">× ${x.cant}</span><span class="s">${x.precio?eur(x.importe):'Gratis'}</span></div>`; });
     dd.lista.forEach(d=>{ h+=`<div class="row dsc"><span class="grow">Descuento: ${esc(d.motivo)}</span><span class="s">−${eur(d.importe)}</span></div>`; });
     h+='</div>';
   });
-  G.ef=r2(G.ef); G.tj=r2(G.tj);
+  G.ef=r2(G.ef); G.tj=r2(G.tj); G.dir=r2(G.dir);
   h+=`<div class="ces-tot"><div><span class="lbl">Efectivo</span><b>${eur(G.ef)}</b></div><div><span class="lbl">Tarjeta</span><b>${eur(G.tj)}</b></div><div><span class="lbl">Total caja</span><b>${eur(G.ef+G.tj)}</b></div></div>
+    ${G.dir?`<p class="small home-note"><b>A cargo del director: ${eur(G.dir)}</b> · no entra en la caja.</p>`:''}
     <p class="small home-note">El total no incluye las entradas Venteya, que ya están pagadas online.</p></div>`;
   el.innerHTML=h;
 }
@@ -887,7 +926,7 @@ function renderHome(){
   const G=GESTORES[UI.gestor];
   const sub=k=>{ if(k==='vy'){ const n=Object.values(D.sec.ent.counts.vy||{}).reduce((a,b)=>a+b,0); return n?`Turno abierto: <b>${n}</b> ${n===1?'entrada':'entradas'} compradas online`:'Compradas online · se apuntan al llegar'; }
     const nvy=k==='ent'?Object.values(D.sec.ent.counts.vy||{}).reduce((x,y)=>x+y,0):0;
-    const s=D.sec[k], l=s.productos.filter(p=>(s.counts.ef[p.id]||0)+(s.counts.tj[p.id]||0)).map(p=>({precio:p.precio,ef:s.counts.ef[p.id]||0,tj:s.counts.tj[p.id]||0,cant:(s.counts.ef[p.id]||0)+(s.counts.tj[p.id]||0)}));
+    const s=D.sec[k], l=s.productos.map(p=>lineaDe(p,m=>(s.counts[m]||{})[p.id]||0)).filter(x=>x.cant);
     const R=conDesc(resumen(l),s); return R.uds?`${turnoViejo(s)?'<b class="bad">Sin cerrar desde '+new Date(s.inicio).toLocaleDateString('es-ES',{weekday:'long',day:'numeric'})+'</b> · ':''}Turno abierto: <b>${eur(R.total)}</b> · ${R.uds} ${k==='ent'?(R.uds===1?'entrada':'entradas'):k==='bar'?(R.uds===1?'consumición':'consumiciones'):(R.uds===1?'artículo':'artículos')}${nvy?` · ${nvy} de la web`:''}`:nvy?`Turno abierto: ${nvy} ${nvy===1?'entrada':'entradas'} de la web`:'Sin ventas en este turno'; };
   const ico={ent:'<path d="M3 7h18v3a2 2 0 0 0 0 4v3H3v-3a2 2 0 0 0 0-4z"/><path d="M14 7v10" stroke-dasharray="2 2"/>',
     tie:'<path d="M5 8h14l-1 12H6z"/><path d="M9 8a3 3 0 0 1 6 0"/>',
@@ -899,7 +938,7 @@ function renderHome(){
     <h1>¿Qué caja vas a llevar?</h1>
     <div class="home-btns">${G.secs.map(k=>`<button class="hb hb-${k}" data-open="${k}"><span class="hb-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${ico[k]}</svg></span><span class="hb-t"><b>${NOMSEC[k]}</b><span>${sub(k)}</span></span><span class="hb-go" aria-hidden="true">›</span></button>`).join('')}</div>
     <button class="cesta-btn" data-cesta="1"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 9h18l-2 11H5z"/><path d="M8 9l3-6M16 9l-3-6"/><path d="M9 13v4M15 13v4M12 13v4"/></svg><span class="grow">Resumen del turno<br><span class="small">Lo vendido ahora en ${UI.gestor==='ayto'?'entradas, Venteya y tienda':'entradas, Venteya, tienda y bar'}</span></span><span class="hb-go" aria-hidden="true">›</span></button>
-    <p class="small home-note">Cada caja es independiente: sus ventas, cierres y tarifas no se mezclan. Las entradas compradas en la web (Venteya) se apuntan dentro de Entradas, con el botón «Venteya» junto a Efectivo y Tarjeta.</p>
+    <p class="small home-note">Cada caja es independiente: sus ventas, cierres y tarifas no se mezclan. Las entradas compradas en la web (Venteya) se apuntan dentro de Entradas, con el botón «Venteya» que hay dentro de Entradas.</p>
     <details class="obs" ${UI.obsAbierto?'open':''}><summary>Sugerencias y observaciones <span aria-hidden="true">›</span></summary>
       <p class="small" style="margin:0 0 12px">¿Algo que cambiar o mejorar en la app, o algún fallo? Escríbelo aquí y le llega por correo a c.pardo@educatioservanda.org.</p>
       <div class="field"><label class="lbl" for="obsTipo">Tipo</label><select id="obsTipo">${['Cambio o mejora','Algo no funciona','Otra observación'].map(x=>`<option${UI.obs.tipo===x?' selected':''}>${x}</option>`).join('')}</select></div>
@@ -915,11 +954,14 @@ function renderHome(){
 UI.ticket=UI.ticket||{}; UI.cambio=false; UI.entrega='';
 function ticketInfo(){ const s=D.sec.bar; let tot=0,n=0; for(const [id,q] of Object.entries(UI.ticket)){ const p=s.productos.find(x=>x.id===id); if(p&&q>0){tot+=p.precio*q;n+=q;} } return {tot:r2(Math.max(0,tot-(UI.tkDesc||0))),n,bruto:r2(tot)}; }
 function renderTicket(){
-  const el=document.getElementById('ticket'), onTie=!UI.home&&D.pagina==='tie'&&UI.view==='Vender', on=onTie||(!UI.home&&D.pagina==='bar'&&UI.view==='Vender');
+  const el=document.getElementById('ticket'), cr=!UI.home&&enCarro()&&UI.view==='Vender', on=cr||(!UI.home&&D.pagina==='bar'&&UI.view==='Vender');
   el.hidden=!on; document.body.classList.toggle('con-ticket',on); if(!on){ el.classList.remove('sheet'); document.body.classList.remove('con-hoja'); return; }
-  if(onTie){ el.classList.remove('sheet'); document.body.classList.remove('con-hoja'); const {n,tot}=cestaInfo(), m=D.metodo==='tj'?'tarjeta':'efectivo';
-    el.innerHTML=`<div class="tk-row"><span class="tk-l"><span class="small" style="white-space:nowrap">Cesta (${n}) · ${m}</span><b>${eur(tot)}</b></span>
-      <button class="tk-b ghost" data-act="cestaVaciar" ${n?'':'disabled'}>Vaciar</button><button class="tk-b" data-act="cestaConfirmar" ${n?'':'disabled'}>Confirmar venta</button></div>`; return; }
+  if(cr){ const {n,tot}=carroInfo(), hoja=UI.carroAbierto&&n;
+    el.classList.toggle('sheet',!!hoja); document.body.classList.toggle('con-hoja',!!hoja);
+    if(hoja){ el.innerHTML=htmlCarro(); return; }
+    const ne=Object.values(D.carro.ent).reduce((a,b)=>a+b,0), nt=n-ne;
+    el.innerHTML=`<div class="tk-row"><span class="tk-l"><span class="small" style="white-space:nowrap">Carrito (${n})${ne&&nt?` · ${ne} entr. + ${nt} art.`:''}</span><b>${eur(tot)}</b></span>
+      <button class="tk-b ghost" data-act="carroVer" ${n?'':'disabled'}>Ver carrito</button><button class="tk-b" data-act="carroVer" ${n?'':'disabled'}>Cobrar</button></div>`; return; }
   const {tot,n}=ticketInfo(), ent=num(UI.entrega), hoja=UI.cambio&&n;
   el.classList.toggle('sheet',!!hoja); document.body.classList.toggle('con-hoja',!!hoja);
   let h;
@@ -960,29 +1002,31 @@ function xlsxPeriodo(k,L,titulo,sub,nombre){
   const esEnt=k==='ent', uLbl=esEnt?'Entradas':k==='bar'?'Consumiciones':'Artículos';
   const rows=[], S=(r,col,v,s,fo)=>{(rows[r]=rows[r]||[]).push({col,v,s:s||0,f:fo});};
   S(1,'A','Monasterio La Santa Espina · '+titulo,4); S(2,'A',sub,7);
-  ['Fecha','Apertura','Cierre','Efectivo','Tarjeta','Total','Efectivo contado','Diferencia',uLbl].concat(esEnt?['Entradas Venteya']:[]).forEach((h,i)=>S(4,'ABCDEFGHIJ'[i],h,5));
+  const cDir=esEnt?'K':'J';
+  ['Fecha','Apertura','Cierre','Efectivo','Tarjeta','Total caja','Efectivo contado','Diferencia',uLbl].concat(esEnt?['Entradas Venteya']:[]).concat(['A cargo del director']).forEach((h,i)=>S(4,'ABCDEFGHIJK'[i],h,5));
   L.forEach((c,i)=>{ const r=5+i, x=serialXL(c.fecha), y=serialXL(c.inicio);
     S(r,'A',Math.floor(x),8); S(r,'B',y-Math.floor(y),9); S(r,'C',x-Math.floor(x),9); S(r,'D',c.efectivo,2); S(r,'E',c.tarjeta,2); S(r,'F',c.total,2,`D${r}+E${r}`);
-    if(c.contado!=null){ S(r,'G',c.contado,2); S(r,'H',r2(c.contado-c.efectivo),2,`G${r}-D${r}`); } S(r,'I',c.unidades||0); if(esEnt) S(r,'J',c.venteya?c.venteya.uds:0); });
+    if(c.contado!=null){ S(r,'G',c.contado,2); S(r,'H',r2(c.contado-c.efectivo),2,`G${r}-D${r}`); } S(r,'I',c.unidades||0); if(esEnt) S(r,'J',c.venteya?c.venteya.uds:0); S(r,cDir,c.director||0,2); });
   const last=4+L.length, tr=last+1, sm=(col,v,s)=>S(tr,col,v,s,L.length?`SUM(${col}5:${col}${last})`:null);
   S(tr,'A','TOTAL',1); sm('D',r2(L.reduce((a,c)=>a+c.efectivo,0)),3); sm('E',r2(L.reduce((a,c)=>a+c.tarjeta,0)),3); sm('F',r2(L.reduce((a,c)=>a+c.total,0)),3); sm('I',L.reduce((a,c)=>a+(c.unidades||0),0),1);
-  if(esEnt) sm('J',L.reduce((a,c)=>a+(c.venteya?c.venteya.uds:0),0),1);
+  if(esEnt) sm('J',L.reduce((a,c)=>a+(c.venteya?c.venteya.uds:0),0),1); sm(cDir,r2(L.reduce((a,c)=>a+(c.director||0),0)),3);
   const cols1='<col min="1" max="1" width="12" customWidth="1"/><col min="2" max="3" width="10" customWidth="1"/><col min="4" max="8" width="15" customWidth="1"/><col min="9" max="9" width="15" customWidth="1"/>';
-  const m=new Map(); L.forEach(c=>(c.lineas||[]).forEach(x=>{ const kk=x.cat+'|'+x.nombre+'|'+x.precio; const o=m.get(kk)||{cat:x.cat,nombre:x.nombre,precio:x.precio,ef:0,tj:0,vy:0}; o.ef+=x.ef; o.tj+=x.tj; o.vy+=x.vy||0; m.set(kk,o); }));
+  const m=new Map(); L.forEach(c=>(c.lineas||[]).forEach(x=>{ const kk=x.cat+'|'+x.nombre+'|'+x.precio; const o=m.get(kk)||{cat:x.cat,nombre:x.nombre,precio:x.precio,ef:0,tj:0,vy:0}; o.ef+=x.ef; o.tj+=x.tj; o.vy+=x.vy||0; o.dir=(o.dir||0)+(x.dir||0); m.set(kk,o); }));
   const cOrd=c=>{const i=DEF[k].cats.indexOf(c);return i<0?99:i;};
   const P=[...m.values()].sort((a,b)=>cOrd(a.cat)-cOrd(b.cat)||a.nombre.localeCompare(b.nombre,'es'));
   const r2s=[], T=(r,col,v,s,fo)=>{(r2s[r]=r2s[r]||[]).push({col,v,s:s||0,f:fo});};
   T(1,'A','Productos vendidos',4); T(2,'A',sub,7);
-  ['Sección','Producto','PVP','Uds efectivo','Uds tarjeta','Unidades','Importe'].concat(esEnt?['Uds Venteya (online)']:[]).forEach((h,i)=>T(4,'ABCDEFGH'[i],h,5));
-  P.forEach((x,i)=>{ const r=5+i; T(r,'A',x.cat,6); T(r,'B',x.nombre); T(r,'C',x.precio,2); T(r,'D',x.ef); T(r,'E',x.tj); T(r,'F',x.ef+x.tj,0,`D${r}+E${r}`); T(r,'G',r2(x.precio*(x.ef+x.tj)),2,`C${r}*F${r}`); if(esEnt) T(r,'H',x.vy); });
+  const pD=esEnt?['I','J']:['H','I'];
+  ['Sección','Producto','PVP','Uds efectivo','Uds tarjeta','Unidades cobradas','Importe cobrado'].concat(esEnt?['Uds Venteya (online)']:[]).concat(['Uds director','Importe director']).forEach((h,i)=>T(4,'ABCDEFGHIJ'[i],h,5));
+  P.forEach((x,i)=>{ const r=5+i; T(r,'A',x.cat,6); T(r,'B',x.nombre); T(r,'C',x.precio,2); T(r,'D',x.ef); T(r,'E',x.tj); T(r,'F',x.ef+x.tj,0,`D${r}+E${r}`); T(r,'G',r2(x.precio*(x.ef+x.tj)),2,`C${r}*F${r}`); if(esEnt) T(r,'H',x.vy); T(r,pD[0],x.dir||0); T(r,pD[1],r2(x.precio*(x.dir||0)),2,`C${r}*${pD[0]}${r}`); });
   const DSA=[].concat(...L.map(c=>c.descuentos||[])), DSd=DSA.filter(d=>d.cargo!=='dir'), DSr=DSA.filter(d=>d.cargo==='dir');
   const DT=DSd.reduce((b,d)=>b+d.importe,0), DR=DSr.reduce((b,d)=>b+d.importe,0);
   if(DT){ const r=5+P.length; T(r,'A','Descuentos',6); T(r,'B','Descuentos aplicados ('+DSd.length+')'); T(r,'G',-r2(DT),2); P.push(null); }
-  if(DR){ const r=5+P.length; T(r,'A','Director',6); T(r,'B','A cargo del director ('+DSr.length+')'); T(r,'G',-r2(DR),2); P.push(null); }
+  if(DR){ const r=5+P.length; T(r,'A','Director',6); T(r,'B','A cargo del director, apuntado como descuento antes del cambio ('+DSr.length+')'); T(r,'G',-r2(DR),2); T(r,pD[1],r2(DR),2); P.push(null); }
   const pl=4+P.length, pt=pl+1;
-  T(pt,'A','TOTAL',1); if(P.length){ const PP=P.filter(Boolean); T(pt,'F',PP.reduce((a,x)=>a+x.ef+x.tj,0),1,`SUM(F5:F${pl})`); T(pt,'G',r2(PP.reduce((a,x)=>a+x.precio*(x.ef+x.tj),0)-DT),3,`SUM(G5:G${pl})`); }
-  const cols2='<col min="1" max="1" width="18" customWidth="1"/><col min="2" max="2" width="34" customWidth="1"/><col min="3" max="7" width="12" customWidth="1"/>';
-  const hojas=[{nombre:'Cierres',xml:hojaXML(rows,{cols:cols1,merge:'A1:I1',freeze:4})},{nombre:'Productos',xml:hojaXML(r2s,{cols:cols2,freeze:4})}];
+  T(pt,'A','TOTAL',1); if(P.length){ const PP=P.filter(Boolean); T(pt,'F',PP.reduce((a,x)=>a+x.ef+x.tj,0),1,`SUM(F5:F${pl})`); T(pt,'G',r2(PP.reduce((a,x)=>a+x.precio*(x.ef+x.tj),0)-DT-DR),3,`SUM(G5:G${pl})`); T(pt,pD[1],r2(PP.reduce((a,x)=>a+x.precio*(x.dir||0),0)+DR),3,`SUM(${pD[1]}5:${pD[1]}${pl})`); }
+  const cols2='<col min="1" max="1" width="18" customWidth="1"/><col min="2" max="2" width="34" customWidth="1"/><col min="3" max="10" width="13" customWidth="1"/>';
+  const hojas=[{nombre:'Cierres',xml:hojaXML(rows,{cols:cols1+'<col min="10" max="11" width="15" customWidth="1"/>',merge:'A1:I1',freeze:4})},{nombre:'Productos',xml:hojaXML(r2s,{cols:cols2,freeze:4})}];
   const fr=sumarFranjas(L); if(fr.length) hojas.push(hojaFranjas(fr,sub,esEnt));
   if(esEnt){ const V=[].concat(...L.map(c=>c.visitas||[])); if(V.length) hojas.push(...hojasEncuesta(V,sub)); }
   return {nombre,bytes:libroXLSX(hojas)};
@@ -1003,7 +1047,7 @@ function bloqueMes(){
   const k=D.pagina, L=cierresMes(k,UI.mes), tot=r2(L.reduce((a,c)=>a+c.total,0)), ef=r2(L.reduce((a,c)=>a+c.efectivo,0)), tj=r2(L.reduce((a,c)=>a+c.tarjeta,0)), dias=new Set(L.map(c=>new Date(c.fecha).toDateString())).size, share=puedeCompartir();
   return `<h3>Cierres del mes</h3>
   <div class="card semana"><div class="sem-nav"><button class="mini" data-mes="-1" aria-label="Mes anterior">‹</button><b>${nomMes(UI.mes)}</b><button class="mini" data-mes="1" ${UI.mes>=0?'disabled':''} aria-label="Mes siguiente">›</button></div>
-  <p class="small">${L.length?`${L.length} ${L.length===1?'cierre':'cierres'} en ${dias} ${dias===1?'día':'días'} · <b>${eur(tot)}</b> (efectivo ${eur(ef)} · tarjeta ${eur(tj)})${k==='ent'&&L.some(c=>c.venteya&&c.venteya.uds)?` · ${L.reduce((a,c)=>a+(c.venteya?c.venteya.uds:0),0)} entradas Venteya`:''}`:'No hay cierres guardados este mes.'} Los cierres se guardan en este móvil; además, el día 1 llega por correo el resumen del mes anterior.</p>
+  <p class="small">${L.length?`${L.length} ${L.length===1?'cierre':'cierres'} en ${dias} ${dias===1?'día':'días'} · <b>${eur(tot)}</b> (efectivo ${eur(ef)} · tarjeta ${eur(tj)})${L.some(c=>c.director)?` · director ${eur(r2(L.reduce((a,c)=>a+(c.director||0),0)))} aparte`:''}${k==='ent'&&L.some(c=>c.venteya&&c.venteya.uds)?` · ${L.reduce((a,c)=>a+(c.venteya?c.venteya.uds:0),0)} entradas Venteya`:''}`:'No hay cierres guardados este mes.'} Los cierres se guardan en este móvil; además, el día 1 llega por correo el resumen del mes anterior.</p>
   <div class="exp"${share?'':' style="grid-template-columns:1fr"'}><button class="btn" data-act="mesX" ${L.length?'':'disabled'}><span class="ext xl">XLSX</span>Excel del mes</button>${share?`<button class="btn" data-act="mesShare" ${L.length?'':'disabled'}>Enviar…</button>`:''}</div></div>`;
 }
 async function compartirX(x,titulo){
@@ -1066,7 +1110,7 @@ setInterval(()=>{ const I=inv(), pend=I.movs.some(m=>!m.env), enTienda=!UI.home&
 setTimeout(()=>{ const I=inv(); if(I.inicial||I.movs.length) sincronizarInv(); },1500);   // al abrir la app
 
 /* ================= vistas ================= */
-function grupos(ps){ const g=[]; ps.forEach(p=>{const k=p.cat||'Otros'; let x=g.find(y=>y.k===k); if(!x){x={k,ps:[]};g.push(x);} x.ps.push(p);}); return g.sort((a,b)=>catOrd(a.k)-catOrd(b.k)); }
+function grupos(ps,sk){ const co=sk?(c=>{const i=DEF[sk].cats.indexOf(c);return i<0?99:i;}):catOrd; const g=[]; ps.forEach(p=>{const k=p.cat||'Otros'; let x=g.find(y=>y.k===k); if(!x){x={k,ps:[]};g.push(x);} x.ps.push(p);}); return g.sort((a,b)=>co(a.k)-co(b.k)); }
 function render(){
   if(UI.home) UI.soloVy=false; if(UI.soloVy){ D.metodo='vy'; UI.view='Vender'; } else if(D.metodo==='vy'&&D.pagina!=='ent') D.metodo='ef';
   document.body.classList.toggle('s-tie',!UI.home&&D.pagina==='tie'); document.body.classList.toggle('s-bar',!UI.home&&D.pagina==='bar'); document.body.classList.toggle('s-vy',!UI.home&&!!UI.soloVy);
@@ -1076,9 +1120,14 @@ function render(){
   document.getElementById('secName').textContent=UI.soloVy?'Entradas Venteya':NOMSEC[D.pagina];
   pintarTotales(t);
   if(!esEnt&&D.metodo==='vy') D.metodo='ef';
-  document.querySelector('#seg [data-m="vy"]').hidden=!esEnt; document.getElementById('seg').classList.toggle('tres',esEnt);
+  if(esEnt&&D.metodo!=='vy') D.metodo='ef'; if(D.pagina==='tie') D.metodo='ef'; if(!esBar&&D.metodo==='dir') D.metodo='ef';
+  // Entradas: «Venta en taquilla» (carrito, se cobra al final) o «Venteya»; Bar: efectivo / tarjeta / director; Tienda: sin selector (se elige al cobrar)
+  const SG=document.getElementById('seg'), bEf=SG.querySelector('[data-m="ef"]');
+  bEf.textContent=esEnt?'Venta en taquilla':'Efectivo';
+  SG.querySelector('[data-m="tj"]').hidden=esEnt; SG.querySelector('[data-m="vy"]').hidden=!esEnt; SG.querySelector('[data-m="dir"]').hidden=!esBar;
+  SG.classList.toggle('tres',esBar);
   const vend=UI.view==='Vender';
-  document.getElementById('seg').hidden=!vend||!!UI.soloVy;
+  SG.hidden=!vend||!!UI.soloVy||D.pagina==='tie';
   document.querySelectorAll('#seg button').forEach(b=>b.setAttribute('aria-pressed',b.dataset.m===D.metodo));
   document.querySelectorAll('nav button').forEach(b=>b.setAttribute('aria-selected',b.dataset.v===UI.view));
   if(!esEnt&&UI.view==='Visitas') UI.view='Vender';
@@ -1087,7 +1136,7 @@ function render(){
   document.querySelector('nav [data-v="Inventario"]').hidden=D.pagina!=='tie';
   document.querySelectorAll('nav button').forEach(b=>b.setAttribute('aria-selected',b.dataset.v===UI.view));
   ['Vender','Caja','Carta','Visitas','Inventario'].forEach(v=>document.getElementById('v'+v).hidden=v!==UI.view);
-  const cs=grupos(sec().productos).map(g=>g.k);
+  const cs=grupos(D.sec[verSec()].productos,verSec()).map(g=>g.k);
   if(UI.filtro!=='Todo'&&!cs.includes(UI.filtro)) UI.filtro='Todo';
   const ch=document.getElementById('chips'); ch.hidden=!vend||cs.length<3;
   ch.innerHTML=['Todo',...cs].map(c=>`<button data-f="${esc(c)}" aria-pressed="${UI.filtro===c}">${esc(c)}</button>`).join('');
@@ -1099,23 +1148,27 @@ function render(){
   renderTicket();
 }
 function renderVender(){
-  const el=document.getElementById('vVender'), m=D.metodo; el.className='m-'+m;
-  if(!sec().productos.length){ el.innerHTML='<div class="empty">Aún no hay tarifas.<br>Añádelas en la pestaña <b>Tarifas</b>.</div>'; return; }
-  const gs=grupos(sec().productos).filter(g=>UI.filtro==='Todo'||g.k===UI.filtro);
-  el.innerHTML=(m==='vy'?`<p class="vybox"><b>Pregunta al llegar si compraron la entrada en la web (Venteya).</b> Si es así, toca aquí su tipo de entrada, una vez por persona. Cuentan como visitantes y van en el cierre de Entradas, pero no se cobran ni entran en el dinero de la caja.</p>`:'')+(m==='vy'?'':`<p class="hint">Cobrando en <b>${NOMBRE[m].toLowerCase()}</b>. Toca ${D.pagina==='ent'?'una entrada por cada persona':D.pagina==='bar'?'cada consumición; abajo ves el pedido y el cambio':'los artículos para ponerlos en la cesta y pulsa <b>Confirmar venta</b> abajo. Hasta confirmar no se cobra ni se descuenta nada del inventario'}. El botón − quita uno.</p>`)+
+  const el=document.getElementById('vVender'), m=D.metodo, k=verSec(), S=D.sec[k], cr=enCarro(); el.className='m-'+(cr?'ef':m);
+  const tabs=D.pagina==='ent'&&m!=='vy'?`<div class="pages catal" role="group" aria-label="Qué añadir al carrito"><button data-act="verCat" data-cat="ent" aria-pressed="${k==='ent'}">Entradas</button><button data-act="verCat" data-cat="tie" aria-pressed="${k==='tie'}">Productos de la tienda</button></div>`:'';
+  if(!S.productos.length){ el.innerHTML=tabs+'<div class="empty">Aún no hay tarifas.<br>Añádelas en la pestaña <b>Tarifas</b>.</div>'; return; }
+  const gs=grupos(S.productos,k).filter(g=>UI.filtro==='Todo'||g.k===UI.filtro);
+  const hint=m==='vy'?`<p class="vybox"><b>Pregunta al llegar si compraron la entrada en la web (Venteya).</b> Si es así, toca aquí su tipo de entrada, una vez por persona. Cuentan como visitantes y van en el cierre de Entradas, pero no se cobran ni entran en el dinero de la caja.</p>`
+    :cr?`<p class="hint">Toca ${D.pagina==='ent'?'una entrada por cada persona y, si se lleva algo de la tienda, añádelo en «Productos de la tienda»':'los artículos'} para ponerlos en el carrito. Al pulsar <b>Cobrar</b> eliges efectivo o tarjeta y, si hace falta, la parte a cargo del director. Hasta confirmar no se apunta nada.</p>`
+    :`<p class="hint">Apuntando en <b>${m==='dir'?'la cuenta del director':NOMBRE[m].toLowerCase()}</b>. Toca cada consumición; abajo ves el pedido y el cambio. El botón − quita uno.</p>`;
+  el.innerHTML=tabs+hint+
     gs.map(g=>`<h3 class="cat">${esc(g.k)}</h3><div class="grid">`+g.ps.map(p=>{
-      const tie=D.pagina==='tie', c=tie?(cesta()[p.id]||0):cnt(m,p.id), any=tie?c:m==='vy'?c:(c||cnt('ef',p.id)+cnt('tj',p.id));
-      return `<div class="cell" data-cell="${p.id}"><button class="tile${c?' on':''}" data-add="${p.id}" aria-label="${tie?'Añadir a la cesta':'Sumar'} ${esc(p.nombre)}">
-        <span class="n">${esc(p.nombre)}</span><span class="p${p.precio?'':' free'}">${p.precio?eur(p.precio):'Gratuita'}</span>${tie?htmlStock(p.id):''}
+      const c=cr?(D.carro[k][p.id]||0):cnt(m,p.id), any=cr?c:m==='vy'?c:(c||cnt('ef',p.id)+cnt('tj',p.id)+cnt('dir',p.id));
+      return `<div class="cell" data-cell="${p.id}"><button class="tile${c?' on':''}" data-add="${p.id}" aria-label="${cr?'Añadir al carrito':'Sumar'} ${esc(p.nombre)}">
+        <span class="n">${esc(p.nombre)}</span><span class="p${p.precio?'':' free'}">${p.precio?eur(p.precio):'Gratuita'}</span>${k==='tie'?htmlStock(p.id):''}
         ${c?`<span class="badge">${c}</span>`:''}</button>
         ${any?`<button class="minus" data-sub="${p.id}" aria-label="Quitar uno de ${esc(p.nombre)}">−</button>`:''}</div>`;
-    }).join('')+'</div>').join('')+(D.pagina==='tie'?htmlVentasTie():'')+(m==='vy'?'':panelDescuento());
+    }).join('')+'</div>').join('')+(cr?htmlVentas(D.pagina):'')+(m==='vy'?'':panelDescuento());
 }
 /* ================= tienda: cesta, ventas e inventario =================
    El stock se guarda por artículo (id del producto de Tarifas) en D.sec.tie.inv.stock.
    Una venta confirmada suma a la caja y descuenta el stock en el MISMO guardado; cada venta tiene un id y
    no se puede aplicar dos veces. Anular devuelve las unidades una sola vez (queda marcada como anulada). */
-const inv=()=>D.sec.tie.inv, cesta=()=>D.sec.tie.cesta;
+const inv=()=>D.sec.tie.inv, cesta=()=>D.carro.tie;
 const stockDe=id=>{ const v=inv().stock[id]; return typeof v==='number'?v:null; };
 function movInv(o){ const I=inv(), p=D.sec.tie.productos.find(x=>x.id===o.pid); I.movs.push(Object.assign({id:'m'+Date.now().toString(36)+uid(),fecha:Date.now(),cat:p?p.cat:''},o));
   if(I.movs.length>3000){ const quitar=I.movs.length-3000; let n=0; I.movs=I.movs.filter(m=>!(m.env&&n<quitar&&++n)); } }
@@ -1150,45 +1203,130 @@ async function sincronizarInv(manual){
 function htmlStock(id){ const st=stockDe(id), q=cesta()[id]||0;
   if(st==null) return '<span class="st muted">Sin inventario</span>';
   const cls=st-q<0?' bad':st<=3?' warn':''; return `<span class="st${cls}">Quedan ${st}${q?` → ${st-q}`:''}</span>`; }
-function cestaInfo(){ const s=D.sec.tie, L=[]; let tot=0,n=0;
-  for(const [id,q] of Object.entries(cesta())){ const p=s.productos.find(x=>x.id===id); if(p&&q>0){ L.push({p,q}); tot+=p.precio*q; n+=q; } }
-  return {L,n,tot:r2(tot)}; }
-function aCesta(id,d){ const c=cesta(), q=(c[id]||0)+d; if(q>0) c[id]=q; else delete c[id]; save(); pintarCelda(id); renderTicket(); }
-async function confirmarVenta(){
-  if(UI.vendiendo) return; const {L,n}=cestaInfo(); if(!n) return;
+/* ================= carrito común y cobro =================
+   El carrito junta entradas (caja de Entradas) y artículos (caja de Tienda). No se apunta nada hasta «Confirmar cobro».
+   El método de pago se elige al cobrar y puede cambiarse sin tocar el carrito. Cada unidad va a efectivo, tarjeta o
+   a la cuenta del director (UI.pago.dir), nunca a dos sitios. Al confirmar, cada parte se apunta en su propia caja. */
+const SECC=['ent','tie'];
+UI.pago={m:null,dir:{},repartir:false,entrega:''}; UI.carroAbierto=false;
+const ck=(k,id)=>k+':'+id;
+function carroInfo(){
+  const L=[]; let tot=0,n=0;
+  SECC.forEach(k=>{ const s=D.sec[k]; Object.entries(D.carro[k]).forEach(([id,q])=>{ const p=s.productos.find(x=>x.id===id); if(p&&q>0){ L.push({k,p,q,sub:r2(p.precio*q)}); tot+=p.precio*q; n+=q; } }); });
+  return {L,n,tot:r2(tot)};
+}
+// reparto del carrito: lo que paga el visitante (con el método elegido) y lo que va a la cuenta del director
+function reparto(){
+  const {L,n,tot}=carroInfo(); let dir=0;
+  const lineas=L.map(x=>{ const d=Math.min(UI.pago.dir[ck(x.k,x.p.id)]||0,x.q); dir+=x.p.precio*d; return Object.assign({},x,{d,v:x.q-d}); });
+  dir=r2(dir); return {L:lineas,n,tot,dir,vis:r2(tot-dir),udsVis:lineas.reduce((a,x)=>a+x.v,0)};
+}
+function aCarro(k,id,d){
+  const c=D.carro[k], q=(c[id]||0)+d; if(q>0) c[id]=q; else delete c[id];
+  const key=ck(k,id); if(UI.pago.dir[key]>(c[id]||0)){ if(c[id]) UI.pago.dir[key]=c[id]; else delete UI.pago.dir[key]; }
+  if(!carroInfo().n){ UI.pago={m:null,dir:{},repartir:false,entrega:''}; UI.carroAbierto=false; }
+  save(); if(verSec()===k&&!UI.carroAbierto) pintarCelda(id); renderTicket();
+}
+function vaciarCarro(){ D.carro.ent={}; D.carro.tie={}; UI.pago={m:null,dir:{},repartir:false,entrega:''}; UI.carroAbierto=false; save(); render(); }
+function textoPago(R){
+  if(!R.n) return '';
+  if(R.udsVis&&!UI.pago.m) return '<span class="small bad">Elige cómo paga el visitante.</span>';
+  return '';
+}
+function htmlCarro(){
+  const R=reparto(), P=UI.pago, todoDir=R.n&&!R.udsVis;
+  let h=`<div class="sheet-h"><h2>Carrito</h2><button class="tk-b ghost" data-act="carroCerrar">‹ Seguir añadiendo</button></div>`;
+  if(!R.n) return h+'<div class="empty">El carrito está vacío.</div>';
+  let sec=null;
+  h+='<div class="card">'+R.L.map(x=>{ const key=ck(x.k,x.p.id), cab=x.k!==sec?`<div class="cr-tag" style="padding-top:10px">${x.k==='ent'?'Entradas':'Tienda'}</div>`:''; sec=x.k;
+    const st=x.k==='tie'?stockDe(x.p.id):null;
+    return cab+`<div class="cr-l"><span class="grow"><b>${esc(x.p.nombre)}</b><br><span class="small">${x.p.precio?eur(x.p.precio):'Gratuita'} × ${x.q}${st!=null&&x.q>st?` · <b class="bad">solo quedan ${st}</b>`:''}</span></span>
+      <span class="cr-q"><button data-crq="${key}" data-d="-1" aria-label="Quitar uno de ${esc(x.p.nombre)}">−</button><b>${x.q}</b><button data-crq="${key}" data-d="1" aria-label="Añadir uno de ${esc(x.p.nombre)}">+</button></span>
+      <span class="cr-s">${eur(x.sub)}</span>
+      ${P.repartir?`<span class="cr-dir">A cargo del director: <span class="cr-q"><button data-crd="${key}" data-d="-1" ${x.d?'':'disabled'} aria-label="Una menos al director">−</button><b>${x.d}</b><button data-crd="${key}" data-d="1" ${x.d<x.q?'':'disabled'} aria-label="Una más al director">+</button></span> de ${x.q}</span>`:''}</div>`; }).join('')+'</div>';
+  h+=`<div class="sheet-tot"><span class="lbl">Total · ${R.n} ${R.n===1?'artículo':'artículos'}</span><b>${eur(R.tot)}</b>
+    ${R.dir?`<div class="reparto" style="margin-top:8px"><div><span>Paga el visitante${P.m&&R.udsVis?` (${P.m==='tj'?'tarjeta':'efectivo'})`:''}</span><b>${eur(R.vis)}</b></div><div class="dirc"><span>A cargo del director</span><b>${eur(R.dir)}</b></div></div>`:''}</div>`;
+  h+=`<div class="field"><span class="lbl">¿Cómo paga el visitante?</span><div class="pago" role="group" aria-label="Método de pago">
+    <button data-pm="ef" aria-pressed="${P.m==='ef'}" ${todoDir?'disabled':''}>Efectivo</button><button data-pm="tj" aria-pressed="${P.m==='tj'}" ${todoDir?'disabled':''}>Tarjeta</button></div>
+    <span class="small">${todoDir?'Todo va a cargo del director: el visitante no paga nada.':'Puedes cambiarlo hasta confirmar; el carrito no se toca.'}</span></div>`;
+  h+=`<div class="opts"><button data-act="carroRepartir" aria-pressed="${!!P.repartir}">${P.repartir?'Quitar cargo al director':'Cargar parte al director'}</button>${P.repartir?`<button data-act="carroTodoDir">Todo al director</button>`:''}</div>`;
+  if(P.m==='ef'&&R.vis>0){ const quick=[...new Set([Math.ceil(R.vis),5,10,20,50].filter(v=>v>=R.vis))].sort((a,b)=>a-b).slice(0,5);
+    const ent=num(P.entrega); let res='<span class="small">Opcional: con cuánto paga, para calcular el cambio.</span>';
+    if(P.entrega!==''&&!isNaN(ent)){ const d=r2(ent-R.vis); res=d>=0?`<span class="tk-dev">Devolver <b>${eur(d)}</b></span>`:`<span class="tk-dev bad">Faltan <b>${eur(-d)}</b></span>`; }
+    h+=`<div class="tk-cambio"><span class="lbl">¿Con cuánto paga?</span><div class="tk-q"><button data-crent="${R.vis}">Justo</button>${quick.filter(v=>v!==R.vis).map(v=>`<button data-crent="${v}">${v} €</button>`).join('')}</div>
+      <div class="tk-row"><input id="crEntrega" inputmode="decimal" placeholder="Otra cantidad €" value="${esc(P.entrega)}" aria-label="Con cuánto paga"><span id="crRes">${res}</span></div></div>`; }
+  const listo=todoDir||!!P.m;
+  h+=`<p id="crAviso" style="margin:0">${textoPago(R)}</p><button class="btn" data-act="carroCobrar" ${listo?'':'disabled'}>Confirmar cobro · ${eur(R.vis)}${R.dir?` + ${eur(R.dir)} director`:''}</button>
+    <button class="btn ghost" data-act="carroVaciar">Vaciar carrito</button>`;
+  return h;
+}
+function resCambioCarro(){ const R=reparto(), ent=num(UI.pago.entrega), box=document.getElementById('crRes'); if(!box) return;
+  if(UI.pago.entrega===''||isNaN(ent)){ box.innerHTML='<span class="small">Opcional: con cuánto paga, para calcular el cambio.</span>'; return; }
+  const d=r2(ent-R.vis); box.innerHTML=d>=0?`<span class="tk-dev">Devolver <b>${eur(d)}</b></span>`:`<span class="tk-dev bad">Faltan <b>${eur(-d)}</b></span>`; }
+// Apunta el cobro: cada unidad una sola vez, cada parte en su caja (entradas / tienda), todo en un solo guardado.
+async function confirmarCobro(){
+  if(UI.vendiendo) return; const R=reparto(); if(!R.n) return;
+  if(R.udsVis&&!UI.pago.m) return toast('Elige si el visitante paga en efectivo o con tarjeta');
   UI.vendiendo=true;
   try{
-    const faltan=L.filter(x=>{ const st=stockDe(x.p.id); return st!=null&&x.q>st; });
-    if(faltan.length&&!await pregunta({titulo:'No hay unidades suficientes',clase:'danger',ok:'Vender igualmente',cancelar:'Volver a la cesta',
+    const faltan=R.L.filter(x=>{ if(x.k!=='tie') return false; const st=stockDe(x.p.id); return st!=null&&x.q>st; });
+    if(faltan.length&&!await pregunta({titulo:'No hay unidades suficientes',clase:'danger',ok:'Vender igualmente',cancelar:'Volver al carrito',
       html:'<ul class="falta">'+faltan.map(x=>`<li><b>${esc(x.p.nombre)}</b>: vendes ${x.q} y quedan ${stockDe(x.p.id)}</li>`).join('')+'</ul><p class="small">Si de verdad están en la tienda, puedes vender igualmente; el inventario quedará en negativo y conviene corregir el recuento.</p>'})) return;
-    const m=D.metodo==='tj'?'tj':'ef', id='v'+Date.now().toString(36)+uid();
-    registrarVenta(id,m,L.map(x=>({pid:x.p.id,nombre:x.p.nombre,precio:x.p.precio,q:x.q})));
-    toast(`Venta confirmada · ${eur(r2(L.reduce((a,x)=>a+x.p.precio*x.q,0)))} en ${m==='tj'?'tarjeta':'efectivo'}`);
+    const m=UI.pago.m||'ef', id='c'+Date.now().toString(36)+uid();
+    const partes=k=>[].concat(...R.L.filter(x=>x.k===k).map(x=>[x.v?{pid:x.p.id,nombre:x.p.nombre,precio:x.p.precio,q:x.v,m}:null,x.d?{pid:x.p.id,nombre:x.p.nombre,precio:x.p.precio,q:x.d,m:'dir'}:null].filter(Boolean)));
+    const LE=partes('ent'), LT=partes('tie'), tid=LT.length?'v'+id.slice(1):null;
+    const sum=(L,mm)=>r2(L.filter(l=>l.m===mm).reduce((a,l)=>a+l.precio*l.q,0));
+    const pz=L=>({ef:sum(L,'ef'),tj:sum(L,'tj'),dir:sum(L,'dir')});
+    if(LE.length){ const s=D.sec.ent; if(s.ventas.some(v=>v.id===id)) return;
+      LE.forEach(l=>{ s.counts[l.m][l.pid]=(s.counts[l.m][l.pid]||0)+l.q; apuntarHora(s,l.precio,l.m,l.q); });
+      s.ventas.push({id,hora:Date.now(),metodo:R.udsVis?m:'dir',lineas:LE,tie:tid,total:r2(LE.reduce((a,l)=>a+l.precio*l.q,0)),partes:pz(LE)}); }
+    if(LT.length) registrarVenta(tid,R.udsVis?m:'dir',LT,LE.length?id:null);
+    vaciarCarroSilencio(); UI.catal='ent'; UI.filtro='Todo';
+    save(); render(); sincronizarInv();
+    const txt=[R.vis?`${eur(R.vis)} en ${m==='tj'?'tarjeta':'efectivo'}`:'',R.dir?`${eur(R.dir)} al director`:''].filter(Boolean).join(' + ');
+    toast('Cobro apuntado: '+txt);
   } finally { UI.vendiendo=false; }
 }
-// Aplica una venta: caja + stock + registro, todo en un solo guardado. Si el id ya existe (reintento), no hace nada.
-function registrarVenta(id,m,lineas){
-  const s=D.sec.tie; if(s.ventas.some(v=>v.id===id)) return false;
-  lineas.forEach(l=>{ s.counts[m][l.pid]=(s.counts[m][l.pid]||0)+l.q; apuntarHora(s,l.precio,m,l.q);
+function vaciarCarroSilencio(){ D.carro.ent={}; D.carro.tie={}; UI.pago={m:null,dir:{},repartir:false,entrega:''}; UI.carroAbierto=false; }
+// Venta de tienda: caja + stock + registro. Cada línea lleva su destino (ef, tj o dir). Si el id ya existe, no hace nada.
+function registrarVenta(id,m,lineas,ref){
+  const s=D.sec.tie; if(!id||!lineas.length||s.ventas.some(v=>v.id===id)) return false;
+  lineas.forEach(l=>{ const mm=l.m||m; s.counts[mm]=s.counts[mm]||{}; s.counts[mm][l.pid]=(s.counts[mm][l.pid]||0)+l.q; apuntarHora(s,l.precio,mm,l.q);
     const st=stockDe(l.pid); if(st!=null){ inv().stock[l.pid]=st-l.q; movInv({tipo:'venta',pid:l.pid,nombre:l.nombre,antes:st,despues:st-l.q,cambio:-l.q,ref:id}); } });
-  s.ventas.push({id,hora:Date.now(),metodo:m,lineas,total:r2(lineas.reduce((a,l)=>a+l.precio*l.q,0))});
-  lineas.forEach(l=>{ delete s.cesta[l.pid]; });
-  save(); render(); sincronizarInv(); return true;
+  const sm=mm=>r2(lineas.filter(l=>(l.m||m)===mm).reduce((a,l)=>a+l.precio*l.q,0));
+  s.ventas.push(Object.assign({id,hora:Date.now(),metodo:m,lineas,total:r2(lineas.reduce((a,l)=>a+l.precio*l.q,0)),partes:{ef:sm('ef'),tj:sm('tj'),dir:sm('dir')}},ref?{ref}:{}));
+  return true;
 }
-function anularVenta(id){
-  const s=D.sec.tie, v=s.ventas.find(x=>x.id===id); if(!v) return toast('Esa venta ya no está en el turno abierto');
-  if(v.anulada) return toast('Esa venta ya estaba anulada');
-  if(v.lineas.some(l=>((s.counts[v.metodo]||{})[l.pid]||0)<l.q)) return toast('No se puede anular: las unidades ya no están en la caja del turno');
-  v.lineas.forEach(l=>{ const n=s.counts[v.metodo][l.pid]-l.q; if(n>0) s.counts[v.metodo][l.pid]=n; else delete s.counts[v.metodo][l.pid]; apuntarHora(s,l.precio,v.metodo,-l.q);
-    const st=stockDe(l.pid); if(st!=null){ inv().stock[l.pid]=st+l.q; movInv({tipo:'anulación',pid:l.pid,nombre:l.nombre,antes:st,despues:st+l.q,cambio:l.q,ref:v.id}); } });
-  v.anulada=Date.now(); save(); render(); sincronizarInv(); toast(`Venta anulada: ${eur(v.total)} y unidades devueltas al inventario`);
+// Anular un cobro: deshace sus dos partes (entradas y tienda) a la vez, o ninguna.
+function anularCobro(id){
+  const E=D.sec.ent, T=D.sec.tie;
+  let ve=E.ventas.find(x=>x.id===id), vt=T.ventas.find(x=>x.id===id);
+  if(ve&&ve.tie) vt=T.ventas.find(x=>x.id===ve.tie); if(vt&&vt.ref) ve=E.ventas.find(x=>x.id===vt.ref);
+  if(!ve&&!vt) return toast('Esa venta ya no está en el turno abierto');
+  if((ve&&ve.tie&&!vt)||(vt&&vt.ref&&!ve)) return toast('No se puede anular: una parte de esta venta ya está en un cierre de caja');
+  if((ve&&ve.anulada)||(vt&&vt.anulada)) return toast('Esa venta ya estaba anulada');
+  const cabe=(s,v)=>v.lineas.every(l=>((s.counts[l.m||v.metodo]||{})[l.pid]||0)>=l.q);
+  if((ve&&!cabe(E,ve))||(vt&&!cabe(T,vt))) return toast('No se puede anular: las unidades ya no están en la caja del turno');
+  const quitar=(s,v,tie)=>v.lineas.forEach(l=>{ const mm=l.m||v.metodo, n=s.counts[mm][l.pid]-l.q; if(n>0) s.counts[mm][l.pid]=n; else delete s.counts[mm][l.pid]; apuntarHora(s,l.precio,mm,-l.q);
+    if(tie){ const st=stockDe(l.pid); if(st!=null){ inv().stock[l.pid]=st+l.q; movInv({tipo:'anulación',pid:l.pid,nombre:l.nombre,antes:st,despues:st+l.q,cambio:l.q,ref:v.id}); } } });
+  const ahora=Date.now(); if(ve){ quitar(E,ve,false); ve.anulada=ahora; } if(vt){ quitar(T,vt,true); vt.anulada=ahora; }
+  save(); render(); if(vt) sincronizarInv();
+  toast(`Venta anulada: ${eur(r2((ve?ve.total:0)+(vt?vt.total:0)))}${vt?' y unidades devueltas al inventario':''}`);
 }
-function htmlVentasTie(){
-  const V=D.sec.tie.ventas.slice().reverse(); if(!V.length) return '';
-  const hr=t=>new Date(t).toLocaleTimeString('es-ES',{hour:'2-digit',minute:'2-digit'});
-  return `<h3 class="cat">Ventas de este turno</h3><div class="card ventas">`+V.map(v=>`<div class="hrow${v.anulada?' anulada':''}"><span class="grow"><b>${hr(v.hora)}</b> · ${eur(v.total)} · ${v.metodo==='tj'?'tarjeta':'efectivo'}<br><span class="small">${v.lineas.map(l=>`${l.q} × ${esc(l.nombre)}`).join(' · ')}</span></span>
-    ${v.anulada?`<span class="small">Anulada ${hr(v.anulada)}</span>`:`<button class="x" data-anular="${v.id}">${UI.anularV===v.id?'¿Anular? Sí':'Anular'}</button>`}</div>`).join('')+'</div>';
+const anularVenta=anularCobro;
+function etqPartes(v){ const p=v.partes||{[v.metodo]:v.total}; return [p.ef?`${eur(p.ef)} efectivo`:'',p.tj?`${eur(p.tj)} tarjeta`:'',p.dir?`${eur(p.dir)} director`:''].filter(Boolean).join(' + ')||eur(0); }
+function htmlVentas(k){
+  const E=D.sec.ent, T=D.sec.tie, hr=t=>new Date(t).toLocaleTimeString('es-ES',{hour:'2-digit',minute:'2-digit'});
+  // en Entradas se ven los cobros con entradas (y su parte de tienda); en Tienda, las ventas de tienda
+  const V=(k==='ent'?E.ventas.map(v=>({v,t:v.tie?T.ventas.find(x=>x.id===v.tie):null})):T.ventas.map(v=>({v:v.ref?E.ventas.find(x=>x.id===v.ref)||v:v,t:v.ref?v:null}))).slice().reverse();
+  if(!V.length) return '';
+  return `<h3 class="cat">Ventas de este turno</h3><div class="card ventas">`+V.map(({v,t})=>{ const L=v.lineas.concat(t&&t!==v?t.lineas:[]), tot=r2(v.total+(t&&t!==v?t.total:0));
+    const p={ef:0,tj:0,dir:0}; [v,t&&t!==v?t:null].filter(Boolean).forEach(x=>{ const q=x.partes||{[x.metodo]:x.total}; ['ef','tj','dir'].forEach(z=>p[z]=r2(p[z]+(q[z]||0))); });
+    const agr={}; L.forEach(l=>{ agr[l.nombre]=(agr[l.nombre]||0)+l.q; });
+    return `<div class="hrow${v.anulada?' anulada':''}"><span class="grow"><b>${hr(v.hora)}</b> · ${eur(tot)} · ${etqPartes({partes:p})}<br><span class="small">${Object.entries(agr).map(([n,q])=>`${q} × ${esc(n)}`).join(' · ')}</span></span>
+    ${v.anulada?`<span class="small">Anulada ${hr(v.anulada)}</span>`:`<button class="x" data-anular="${v.id}">${UI.anularV===v.id?'¿Anular? Sí':'Anular'}</button>`}</div>`; }).join('')+'</div>';
 }
+const htmlVentasTie=()=>htmlVentas('tie');
 /* --- pestaña Inventario --- */
 const MOTIVOS_INV=['Reposición (llega género)','Retirada (rotura, caducado o pérdida)','Uso interno o regalo','Recuento (corregir el total real)','Otro'];
 function nuevoValor(id){ const r=(UI.invEd&&UI.invEd.d[id])||{delta:0,recuento:''}, st=stockDe(id);
@@ -1282,7 +1420,7 @@ function guardarInicial(){
 }
 /* ---------- descuento libre ---------- */
 const MOTIVOS=['Cliente habitual','Grupo o colectivo','Invitación de la casa','Producto con defecto','Error de cobro','Trabajador o voluntario'];
-function abrirDescuento(){ const tk=D.pagina==='bar'?ticketInfo():null; UI.dsc={motivo:'',tipo:'eur',valor:'',base:tk&&tk.n?nf(tk.tot):'',metodo:D.metodo==='tj'?'tj':'ef',cargo:''}; render(); setTimeout(()=>{ const i=document.getElementById('dscMot'); if(i) i.focus(); },50); }
+function abrirDescuento(){ const tk=D.pagina==='bar'?ticketInfo():null; UI.dsc={motivo:'',tipo:'eur',valor:'',base:tk&&tk.n?nf(tk.tot):'',metodo:D.metodo==='tj'?'tj':'ef'}; render(); setTimeout(()=>{ const i=document.getElementById('dscMot'); if(i) i.focus(); },50); }
 function calcDescuento(){
   const F=UI.dsc, v=num(F.valor), b=num(F.base);
   if(isNaN(v)||v<=0) return {err:'Escribe la cantidad del descuento.'};
@@ -1300,25 +1438,22 @@ function textoDescuento(){
 }
 function panelDescuento(){
   const F=UI.dsc;
-  if(!F) return `<button class="desc-btn" data-act="dscAbrir"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M19 5 5 19"/><circle cx="7" cy="7" r="2.5"/><circle cx="17" cy="17" r="2.5"/></svg>Descuento o cargo al director</button>`;
-  const dir=F.cargo==='dir';
-  return `<div class="desc-box${dir?' dir':''}"><h3>${dir?'Cargo al director':'Descuento'}</h3>
-    <div class="field"><span class="lbl">¿Quién lo paga?</span><div class="opts"><button type="button" data-dsccargo="" aria-pressed="${!dir}">Descuento (lo asume la caja)</button><button type="button" data-dsccargo="dir" aria-pressed="${dir}">A cargo del director</button></div>
-    ${dir?'<p class="small" style="margin:6px 0 0">El cliente no paga esta cantidad: se apunta a cuenta del director y sale aparte en el cierre. Para cargarle la cuenta entera, elige «Porcentaje» y pon 100.</p>':''}</div>
-    <div class="field"><label class="lbl" for="dscMot">${dir?'Concepto (para quién o por qué)':'Motivo'}</label><input id="dscMot" list="dlMot" value="${esc(F.motivo)}" placeholder="${dir?'Ej. Invitados del director':'Ej. Cliente habitual'}" autocomplete="off" maxlength="80"><datalist id="dlMot">${MOTIVOS.map(x=>`<option value="${esc(x)}">`).join('')}</datalist></div>
+  const nota=D.pagina==='bar'?'Para cargar consumiciones al director, usa el botón «Director» de arriba.':'Para cargar algo al director, hazlo al cobrar, en el carrito.';
+  if(!F) return `<button class="desc-btn" data-act="dscAbrir"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M19 5 5 19"/><circle cx="7" cy="7" r="2.5"/><circle cx="17" cy="17" r="2.5"/></svg>Descuento</button>`;
+  return `<div class="desc-box"><h3>Descuento</h3><p class="small" style="margin:-4px 0 10px">Lo asume la caja. ${nota}</p>
+    <div class="field"><label class="lbl" for="dscMot">Motivo</label><input id="dscMot" list="dlMot" value="${esc(F.motivo)}" placeholder="Ej. Cliente habitual" autocomplete="off" maxlength="80"><datalist id="dlMot">${MOTIVOS.map(x=>`<option value="${esc(x)}">`).join('')}</datalist></div>
     <div class="field"><span class="lbl">Tipo de descuento</span><div class="opts"><button type="button" data-dsctipo="eur" aria-pressed="${F.tipo==='eur'}">En euros (€)</button><button type="button" data-dsctipo="pct" aria-pressed="${F.tipo==='pct'}">Porcentaje (%)</button></div></div>
-    <div class="field"><label class="lbl" for="dscVal">${F.tipo==='pct'?'Porcentaje (%)':dir?'Cantidad a cargo del director (€)':'Cantidad a descontar (€)'}</label><input id="dscVal" inputmode="decimal" value="${esc(F.valor)}" placeholder="${F.tipo==='pct'?'Ej. 10':'Ej. 2,50'}" autocomplete="off"></div>
+    <div class="field"><label class="lbl" for="dscVal">${F.tipo==='pct'?'Porcentaje (%)':'Cantidad a descontar (€)'}</label><input id="dscVal" inputmode="decimal" value="${esc(F.valor)}" placeholder="${F.tipo==='pct'?'Ej. 10':'Ej. 2,50'}" autocomplete="off"></div>
     ${F.tipo==='pct'?`<div class="field"><label class="lbl" for="dscBase">Importe de la cuenta (€)</label><input id="dscBase" inputmode="decimal" value="${esc(F.base)}" placeholder="Ej. 24,00" autocomplete="off"></div>`:''}
-    <div class="field"><span class="lbl">${dir?'La venta se marcó en':'Se descuenta de lo cobrado en'}</span><div class="opts"><button type="button" data-dscmet="ef" aria-pressed="${F.metodo==='ef'}">Efectivo</button><button type="button" data-dscmet="tj" aria-pressed="${F.metodo==='tj'}">Tarjeta</button></div></div>
+    <div class="field"><span class="lbl">Se descuenta de lo cobrado en</span><div class="opts"><button type="button" data-dscmet="ef" aria-pressed="${F.metodo==='ef'}">Efectivo</button><button type="button" data-dscmet="tj" aria-pressed="${F.metodo==='tj'}">Tarjeta</button></div></div>
     <p class="desc-res" id="dscRes">${textoDescuento()}</p>
-    <button class="btn" data-act="dscAplicar">${dir?'Cargar al director':'Aplicar descuento'}</button><button class="btn ghost" data-act="dscCancelar" style="margin-top:8px">Cancelar</button></div>`;
+    <button class="btn" data-act="dscAplicar">Aplicar descuento</button><button class="btn ghost" data-act="dscCancelar" style="margin-top:8px">Cancelar</button></div>`;
 }
 function aplicarDescuento(){
   const F=UI.dsc, mot=(F.motivo||'').trim(); if(!mot) return toast(F.cargo==='dir'?'Escribe el concepto del cargo':'Escribe el motivo del descuento');
   const c=calcDescuento(); if(c.err) return toast(c.err);
   const mx=maxDescuento(F.metodo); if(c.importe>mx+0.001) return toast(`No puede pasar de ${eur(mx)} (lo cobrado en ${F.metodo==='ef'?'efectivo':'tarjeta'})`);
   const s=sec(), d={id:uid(),hora:Date.now(),h:new Date().getHours(),motivo:mot.slice(0,80),tipo:F.tipo,valor:c.valor,base:c.base,importe:c.importe,metodo:F.metodo};
-  if(F.cargo==='dir') d.cargo='dir';
   s.descuentos=s.descuentos||[]; s.descuentos.push(d);
   if(D.pagina==='bar'&&Object.keys(UI.ticket).length) UI.tkDesc=r2((UI.tkDesc||0)+d.importe);
   UI.dsc=null; save(); render(); const pag=D.pagina;
@@ -1333,21 +1468,24 @@ function cuadre(t){
   return `<p class="diff ${Math.abs(d)<0.005?'ok':'bad'}">${Math.abs(d)<0.005?'El efectivo cuadra':(d>0?'Sobran ':'Faltan ')+eur(Math.abs(d))}</p>`;
 }
 function tabla(l,total,ds){
-  const hayVy=l.some(x=>x.vy);
-  let h=`<div class="card"><div class="row head"><span class="grow">Artículo</span><span class="q">Efec.</span><span class="q">Tarj.</span>${hayVy?'<span class="q">Vtya.</span>':''}<span class="s">Importe</span></div>`, cat=null;
+  const hayVy=l.some(x=>x.vy), hayDir=l.some(x=>x.dir), dirU=r2(l.reduce((a,x)=>a+x.precio*(x.dir||0),0));
+  let h=`<div class="card"><div class="row head"><span class="grow">Artículo</span><span class="q">Efec.</span><span class="q">Tarj.</span>${hayDir?'<span class="q">Dir.</span>':''}${hayVy?'<span class="q">Vtya.</span>':''}<span class="s">Importe</span></div>`, cat=null;
   l.forEach(x=>{ if(x.cat!==cat){cat=x.cat; h+=`<div class="row sub">${esc(cat)}</div>`;}
-    h+=`<div class="row"><span class="grow">${esc(x.nombre)}</span><span class="q">${x.ef||'·'}</span><span class="q">${x.tj||'·'}</span>${hayVy?`<span class="q">${x.vy||'·'}</span>`:''}<span class="s">${x.precio?(x.cant?eur(x.subtotal):'—'):'Gratis'}</span></div>`; });
+    h+=`<div class="row"><span class="grow">${esc(x.nombre)}</span><span class="q">${x.ef||'·'}</span><span class="q">${x.tj||'·'}</span>${hayDir?`<span class="q">${x.dir||'·'}</span>`:''}${hayVy?`<span class="q">${x.vy||'·'}</span>`:''}<span class="s">${x.precio?(x.cant?eur(x.subtotal):'—'):'Gratis'}</span></div>`; });
+  if(dirU) h+=`<div class="row dsc"><span class="grow">A cargo del director (no se cobra en caja)</span><span class="s">−${eur(dirU)}</span></div>`;
   (ds||[]).forEach(d=>{ h+=`<div class="row dsc"><span class="grow">${ETQ_DSC(d)}: ${esc(d.motivo)}${d.tipo==='pct'?` (${nf(d.valor).replace(/,00$/,'')} % de ${eur(d.base)})`:''} · ${d.metodo==='ef'?'efectivo':'tarjeta'}</span><button class="x" data-deldsc="${d.id}" aria-label="Quitar descuento ${esc(d.motivo)}">${UI.borrarD===d.id?'¿Seguro? Sí, quitar':'Quitar'}</button><span class="s">−${eur(d.importe)}</span></div>`; });
-  return h+`<div class="row tot"><span class="grow">Total</span><span class="s">${eur(total)}</span></div></div>`;
+  return h+`<div class="row tot"><span class="grow">Total cobrado en caja</span><span class="s">${eur(total)}</span></div></div>`;
 }
 const turnoViejo=s=>new Date(s.inicio).toDateString()!==new Date().toDateString();
 function renderCaja(t){
   const el=document.getElementById('vCaja'), s=sec(), esEnt=D.pagina==='ent';
   const desde=new Date(s.inicio).toLocaleString('es-ES',{weekday:'short',day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'});
   let h=`<h2>Caja de${esEnt?' entradas':D.pagina==='bar'?'l bar':' la tienda'}</h2><p class="small" style="margin:-6px 0 12px">Abierta desde ${desde}</p>${turnoViejo(s)&&(t.uds||t.vy)?`<p class="aviso">Este turno sigue abierto desde <b>${desde}</b>. Si es de otro día, ciérralo para que no se mezclen las ventas.</p>`:''}
-    <div class="sum"><div><span class="lbl"><span class="dot ef"></span>Efectivo</span><b>${eur(t.tEf)}</b></div>
+    <div class="sum cuatro"><div><span class="lbl"><span class="dot ef"></span>Efectivo</span><b>${eur(t.tEf)}</b></div>
     <div><span class="lbl"><span class="dot tj"></span>Tarjeta</span><b>${eur(t.tTj)}</b></div>
-    <div><span class="lbl"><span class="dot vi"></span>${esEnt?'Visitas':'Artículos'}</span><b>${t.uds+(esEnt?t.vy:0)}</b></div></div>`;
+    <div><span class="lbl"><span class="dot dir"></span>Director</span><b>${eur(t.tDir||0)}</b></div>
+    <div><span class="lbl"><span class="dot vi"></span>${esEnt?'Visitas':'Artículos'}</span><b>${t.uds+(esEnt?t.vy:0)}</b></div></div>
+    <p class="small" style="margin:-4px 0 12px">Lo del director no entra en la caja: se apunta en su propia cuenta.</p>`;
   h+= t.l.length ? tabla(t.l,t.total,s.descuentos) : '<div class="empty">Todavía no hay ventas en este turno.</div>';
   if(esEnt&&t.vy) h+=`<p class="vybox"><b>Entradas Venteya (pagadas online): ${t.vy}</b> · ${eur(t.tVy)}. Cuentan como visitantes, pero no están en el efectivo ni en la tarjeta de esta caja.</p>`;
   h+= bloqueFranjas(franjasDe(s,t),'Ventas por franja horaria',esEnt);
@@ -1360,7 +1498,7 @@ function renderCaja(t){
   else h+='<div class="card">'+s.cierres.slice(0,60).map((x,i)=>{
       const f=new Date(x.fecha).toLocaleString('es-ES',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'});
       const dd=x.contado!=null?x.contado-x.efectivo:null;
-      return `<div class="hrow"><span class="grow">${f} · <span class="s">${eur(x.total)}</span><br><span class="small">Efec. ${eur(x.efectivo)} · Tarj. ${eur(x.tarjeta)} · ${x.unidades} ${esEnt?'visit.':'uds'}${dd!=null&&Math.abs(dd)>=0.005?` · ${dd>0?'sobraron':'faltaron'} ${eur(Math.abs(dd))}`:''}</span></span>
+      return `<div class="hrow"><span class="grow">${f} · <span class="s">${eur(x.total)}</span><br><span class="small">Efec. ${eur(x.efectivo)} · Tarj. ${eur(x.tarjeta)}${x.director?` · Dir. ${eur(x.director)}`:''} · ${x.unidades} ${esEnt?'visit.':'uds'}${dd!=null&&Math.abs(dd)>=0.005?` · ${dd>0?'sobraron':'faltaron'} ${eur(Math.abs(dd))}`:''}</span></span>
         <button class="mini" data-exp="pdf" data-k="${i}" aria-label="PDF del cierre del ${f}">PDF</button><button class="mini" data-exp="xlsx" data-k="${i}" aria-label="Excel del cierre del ${f}">XLSX</button></div>`}).join('')+'</div>';
   el.innerHTML=h;
 }
@@ -1383,11 +1521,11 @@ function pregunta({titulo,html='',ok='Aceptar',cancelar='Cancelar',clase=''}){
 }
 async function pedirCierre(){
   const t=totales(), s=sec(), pag=D.pagina;
-  if(pag==='tie'&&cestaInfo().n){ UI.view='Vender'; render(); return toast('Hay artículos en la cesta: confirma la venta o vacíala antes de cerrar.'); }
+  if((pag==='tie'||pag==='ent')&&carroInfo().n){ UI.view='Vender'; render(); return toast('Hay artículos en el carrito: cobra la venta o vacía el carrito antes de cerrar.'); }
   if(!(t.uds||t.vy)) return;
   const fila=(a,b)=>`<div><dt>${a}</dt><dd>${b}</dd></div>`, gr=(s.visitas||[]).length;
   const html=(t.tEf&&String(UI.contado).trim()===''?'<p class="aviso">Aún no has escrito el efectivo contado. Puedes cerrar igualmente, pero es mejor contarlo antes.</p>':'')
-    +`<dl class="tot">${fila('Efectivo',eur(t.tEf))}${fila('Tarjeta',eur(t.tTj))}${(()=>{ if(!(t.desc&&t.desc.total)) return ''; const L=t.desc.lista, dr=L.filter(d=>d.cargo==='dir'), ds=L.filter(d=>d.cargo!=='dir'), sm=x=>x.reduce((a,d)=>a+d.importe,0); return (ds.length?fila(`Incluye ${ds.length} ${ds.length===1?'descuento':'descuentos'}`,'−'+eur(sm(ds))):'')+(dr.length?fila('A cargo del director',eur(sm(dr))):''); })()}</dl>${cuadre(t)}`
+    +`<dl class="tot">${fila('Efectivo',eur(t.tEf))}${fila('Tarjeta',eur(t.tTj))}${t.tDir?fila('A cargo del director (aparte)',eur(t.tDir)):''}${(()=>{ if(!(t.desc&&t.desc.total)) return ''; const L=t.desc.lista, ds=L.filter(d=>d.cargo!=='dir'), sm=x=>x.reduce((a,d)=>a+d.importe,0); return ds.length?fila(`Incluye ${ds.length} ${ds.length===1?'descuento':'descuentos'}`,'−'+eur(sm(ds))):''; })()}</dl>${cuadre(t)}`
     +`<p class="small" style="margin-top:10px">${pag==='ent'&&gr?`La encuesta (${gr} grupos) va con el cierre. `:''}Se guarda en el historial y los contadores vuelven a cero.</p>`;
   if(!await pregunta({titulo:`¿Cerrar la caja con ${eur(t.total)}?`,html,ok:'Sí, cerrar caja',clase:'danger'})) return;
   if(D.pagina===pag&&!UI.home) cerrarCaja();
@@ -1421,7 +1559,7 @@ document.addEventListener('click',e=>{
   if(b.dataset.open) return abrirSeccion(b.dataset.open);
   if(b.dataset.gestor!=null){ UI.gestor=b.dataset.gestor||null; UI.cesta=false; UI.home=true; render(); window.scrollTo(0,0); entrar(); return; }
   if(b.dataset.cesta!=null){ UI.cesta=b.dataset.cesta==='1'; render(); window.scrollTo(0,0); entrar(); return; }
-  if(b.dataset.home){ UI.home=true; UI.cambio=false; render(); window.scrollTo(0,0); entrar(); return; }
+  if(b.dataset.home){ UI.home=true; UI.cambio=false; UI.carroAbierto=false; render(); window.scrollTo(0,0); entrar(); return; }
   if(b.dataset.ent!=null){ UI.entrega=String(b.dataset.ent).replace('.',','); const i=document.getElementById('entrega'); if(i) i.value=UI.entrega; resCambio(); return; }
   if(b.dataset.sem){ UI.semana=Math.min(0,UI.semana+(+b.dataset.sem)); render(); return; }
   if(b.dataset.mes){ UI.mes=Math.min(0,UI.mes+(+b.dataset.mes)); render(); return; }
@@ -1429,9 +1567,13 @@ document.addEventListener('click',e=>{
   if(b.dataset.m){ D.metodo=b.dataset.m; save(); render(); return; }
   if(b.dataset.f){ UI.filtro=b.dataset.f; document.querySelectorAll('#chips button').forEach(x=>x.setAttribute('aria-pressed',x===b)); renderVender(); return; }
   if(b.dataset.v){ UI.view=b.dataset.v; UI.confirmar=false; UI.editT=false; render(); window.scrollTo(0,0); if(UI.view==='Inventario') sincronizarInv(); return; }
+  if(b.dataset.pm){ UI.pago.m=b.dataset.pm; if(UI.pago.m!=='ef') UI.pago.entrega=''; renderTicket(); return; }
+  if(b.dataset.crq){ const [k,id]=b.dataset.crq.split(':'); aCarro(k,id,+b.dataset.d); return; }
+  if(b.dataset.crd){ const key=b.dataset.crd, [k,id]=key.split(':'), q=D.carro[k][id]||0, v=Math.max(0,Math.min(q,(UI.pago.dir[key]||0)+(+b.dataset.d))); if(v) UI.pago.dir[key]=v; else delete UI.pago.dir[key]; renderTicket(); return; }
+  if(b.dataset.crent!=null){ UI.pago.entrega=String(b.dataset.crent).replace('.',','); const i=document.getElementById('crEntrega'); if(i) i.value=UI.pago.entrega; resCambioCarro(); return; }
   if(b.dataset.add) return venderUno(b.dataset.add);
   /* si el − aparece bajo el dedo durante toques rápidos, ese toque sigue siendo una venta */
-  if(b.dataset.sub){ const id=b.dataset.sub; if(performance.now()-(UI.minusT[id]||-1e9)<400) return venderUno(id); return D.pagina==='tie'?aCesta(id,-1):sumar(id,-1); }
+  if(b.dataset.sub){ const id=b.dataset.sub; if(performance.now()-(UI.minusT[id]||-1e9)<400) return venderUno(id); return enCarro()?aCarro(verSec(),id,-1):sumar(id,-1); }
   if(b.dataset.dsctipo){ UI.dsc.tipo=b.dataset.dsctipo; render(); const i=document.getElementById('dscVal'); if(i) i.focus(); return; }
   if(b.dataset.dscmet){ UI.dsc.metodo=b.dataset.dscmet; render(); return; }
   if(b.dataset.dsccargo!==undefined&&UI.dsc){ UI.dsc.cargo=b.dataset.dsccargo; render(); return; }
@@ -1452,8 +1594,13 @@ document.addEventListener('click',e=>{
   if(b.dataset.exp){ const k=b.dataset.k; const c=k==='actual'?cierreActual():sec().cierres[+k]; if(c) exportar(b.dataset.exp,c); return; }
   const a=b.dataset.act;
   if(a==='editT'){ UI.editT=!UI.editT; UI.borrarP=null; render(); }
-  if(a==='cestaVaciar'){ D.sec.tie.cesta={}; save(); render(); toast('Cesta vacía: no se ha vendido nada'); }
-  if(a==='cestaConfirmar') confirmarVenta();
+  if(a==='carroVer'){ UI.carroAbierto=true; renderTicket(); entrar(document.getElementById('ticket')); }
+  if(a==='carroCerrar'){ UI.carroAbierto=false; render(); }
+  if(a==='carroVaciar'){ vaciarCarro(); toast('Carrito vacío: no se ha cobrado nada'); }
+  if(a==='carroCobrar') confirmarCobro();
+  if(a==='carroRepartir'){ UI.pago.repartir=!UI.pago.repartir; if(!UI.pago.repartir) UI.pago.dir={}; renderTicket(); }
+  if(a==='carroTodoDir'){ carroInfo().L.forEach(x=>{ UI.pago.dir[ck(x.k,x.p.id)]=x.q; }); UI.pago.entrega=''; renderTicket(); }
+  if(a==='verCat'){ UI.catal=b.dataset.cat==='tie'?'tie':'ent'; UI.filtro='Todo'; render(); }
   if(a==='invEditar'){ UI.invEd={d:{},motivo:'',nota:''}; render(); window.scrollTo(0,0); }
   if(a==='invCancelar'){ UI.invEd=null; render(); toast('Sin cambios en el inventario'); }
   if(a==='invGuardar') guardarAjuste();
@@ -1504,6 +1651,7 @@ document.addEventListener('input',e=>{
   if(e.target.id==='dscMot'&&UI.dsc) UI.dsc.motivo=e.target.value;
   if((e.target.id==='dscVal'||e.target.id==='dscBase')&&UI.dsc){ UI.dsc[e.target.id==='dscVal'?'valor':'base']=e.target.value; const r=document.getElementById('dscRes'); if(r) r.innerHTML=textoDescuento(); }
   if(e.target.id==='entrega'){ UI.entrega=e.target.value; resCambio(); }
+  if(e.target.id==='crEntrega'){ UI.pago.entrega=e.target.value; resCambioCarro(); }
   if(e.target.id==='vEnt'){ UI.fv.entradas=e.target.value; previewEntradas(); }
   if(e.target.id==='vPers'){ UI.fv.personas=e.target.value.replace(/\D/g,''); UI.fv.pTocado=e.target.value!==''; }
   if(e.target.id==='vLug'){ UI.fv.lugar=e.target.value; }
