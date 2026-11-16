@@ -1,7 +1,7 @@
 // Guarda la app en el móvil para que funcione sin internet.
 // Con internet siempre carga la última versión de la página; sin internet usa la copia guardada.
 // Si cambias algún archivo, sube también este con la versión cambiada (v2, v3...).
-const VERSION = 'caja-santa-espina-v25';
+const VERSION = 'caja-santa-espina-v26';
 const ARCHIVOS = ['./', './index.html', './manifest.webmanifest', './icon-192.png', './icon-512.png', './icon-maskable-512.png', './apple-touch-icon.png'];
 
 self.addEventListener('install', e => {
@@ -32,4 +32,10 @@ self.addEventListener('fetch', e => {
     if (res.ok) { const copia = res.clone(); caches.open(VERSION).then(c => c.put(req, copia)); }
     return res;
   })));
+});
+
+// Al tocar una notificación (aviso de «comprar más»), se abre la app.
+self.addEventListener('notificationclick', e => {
+  e.notification.close();
+  e.waitUntil(self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then(cs => cs.length ? cs[0].focus() : self.clients.openWindow('./')));
 });

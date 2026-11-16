@@ -331,7 +331,7 @@ const DEF = {
     ['Queso','Queso oveja leche cruda semicurado (cuña)',14],['Queso','Queso oveja leche cruda curado (cuña)',14],['Queso','Queso oveja leche cruda semicurado (entero)',23],
     ['Vino','Convento Las Claras blanco verdejo',10],['Vino','Convento Las Claras tinto roble',14],['Vino','Convento Las Claras tinto crianza',20],
     ['Vino','Pack CLC: 2 verdejos + 1 roble',30],['Vino','Pack CLC: 2 robles + 1 verdejo',32],['Vino','Pack CLC: verdejo, roble y crianza',39],['Vino','Pack CLC: roble, crianza y reserva',59]]},
-  bar:{nombre:'Bar', cats:["Cafés e infusiones", "Bebidas", "Comida y snacks", "Helados", "Otros"], productos:[["Cafés e infusiones", "Café solo", 1.5], ["Cafés e infusiones", "Café cortado", 1.7], ["Cafés e infusiones", "Café con leche", 2], ["Cafés e infusiones", "Café americano", 1.5], ["Cafés e infusiones", "Descafeinado sobre", 2], ["Cafés e infusiones", "Infusión", 2], ["Bebidas", "Refresco", 1.5], ["Bebidas", "Cerveza", 2], ["Bebidas", "Cerveza sin alcohol", 2], ["Comida y snacks", "Patatas Pringles", 1.8], ["Comida y snacks", "Cortezas (tarrina)", 0.8], ["Comida y snacks", "Frutos secos (tarrina)", 0.5], ["Comida y snacks", "Minipizza", 2.5], ["Comida y snacks", "Panini", 2.5], ["Helados", "Calippo Lima-Limón", 2], ["Helados", "Super Twister", 2.2], ["Helados", "Frigurón", 1.3], ["Helados", "Frigo Chuches", 2], ["Helados", "Cornetto XXL Nata", 3], ["Helados", "Cornetto Choc 'N' Ball", 3], ["Helados", "Volcanix", 2.5], ["Helados", "Sándwich Galleta Dinosaurus", 2.9], ["Helados", "Sándwich Filipinos Blanco", 2.9], ["Helados", "Magnum Bar Caramel & Nuts", 2.4], ["Helados", "Magnum La Pistache", 3.2], ["Helados", "Magnum Almond", 3.2], ["Helados", "Magnum Blanco", 3.2], ["Helados", "Magnum Double Chocolate", 3.2], ["Helados", "Cornetto Max Pistachio", 2.6], ["Helados", "Cornetto Nata", 1.7]]}
+  bar:{nombre:'Bar', cats:["Cafés e infusiones", "Bebidas", "Comida y snacks", "Helados", "Otros"], productos:[["Cafés e infusiones", "Café solo", 1.5], ["Cafés e infusiones", "Café cortado", 1.7], ["Cafés e infusiones", "Café con leche", 2], ["Cafés e infusiones", "Café americano", 1.5], ["Cafés e infusiones", "Descafeinado sobre", 2], ["Cafés e infusiones", "Infusión", 2], ["Bebidas", "Coca-Cola", 1.5], ["Bebidas", "Coca-Cola Zero", 1.5], ["Bebidas", "Coca-Cola Zero Zero", 1.5], ["Bebidas", "Fanta naranja", 1.5], ["Bebidas", "Fanta limón", 1.5], ["Bebidas", "Nestea", 1.5], ["Bebidas", "Aquarius", 1.5], ["Bebidas", "Tónica", 1.5], ["Bebidas", "Cerveza", 2], ["Bebidas", "Cerveza sin alcohol", 2], ["Comida y snacks", "Patatas Pringles", 1.8], ["Comida y snacks", "Cortezas (tarrina)", 0.8], ["Comida y snacks", "Frutos secos (tarrina)", 0.5], ["Comida y snacks", "Minipizza", 2.5], ["Comida y snacks", "Panini", 2.5], ["Helados", "Calippo Lima-Limón", 2], ["Helados", "Super Twister", 2.2], ["Helados", "Frigurón", 1.3], ["Helados", "Frigo Chuches", 2], ["Helados", "Cornetto XXL Nata", 3], ["Helados", "Cornetto Choc 'N' Ball", 3], ["Helados", "Volcanix", 2.5], ["Helados", "Sándwich Galleta Dinosaurus", 2.9], ["Helados", "Sándwich Filipinos Blanco", 2.9], ["Helados", "Magnum Bar Caramel & Nuts", 2.4], ["Helados", "Magnum La Pistache", 3.2], ["Helados", "Magnum Almond", 3.2], ["Helados", "Magnum Blanco", 3.2], ["Helados", "Magnum Double Chocolate", 3.2], ["Helados", "Cornetto Max Pistachio", 2.6], ["Helados", "Cornetto Nata", 1.7]]}
 };
 
 /* ================= utilidades ================= */
@@ -347,6 +347,7 @@ const stamp = ms => { const d=new Date(ms), z=n=>String(n).padStart(2,'0'); retu
 
 /* ================= estado y guardado en el móvil ================= */
 const KEY='santaespina_caja_v1';
+const REFRESCOS=['Coca-Cola','Coca-Cola Zero','Coca-Cola Zero Zero','Fanta naranja','Fanta limón','Nestea','Aquarius','Tónica'];
 function nuevaSec(k){ return {productos:DEF[k].productos.map(([cat,nombre,precio])=>({id:uid(),cat,nombre,precio})),counts:{ef:{},tj:{}},inicio:Date.now(),cierres:[]}; }
 let D;
 try{ D=JSON.parse(localStorage.getItem(KEY)||'null'); }catch(e){ D=null; }
@@ -354,10 +355,22 @@ function normalizar(){
   if(!D||!D.sec){ D={sec:{ent:nuevaSec('ent'),tie:nuevaSec('tie'),bar:nuevaSec('bar')},pagina:'ent',metodo:'ef'}; }
   ['ent','tie','bar'].forEach(k=>{ if(!D.sec[k]) D.sec[k]=nuevaSec(k); const s=D.sec[k]; s.productos=Array.isArray(s.productos)?s.productos:[]; s.counts=s.counts||{ef:{},tj:{}}; s.counts.ef=s.counts.ef||{}; s.counts.tj=s.counts.tj||{}; s.counts.vy=s.counts.vy||{}; s.cierres=Array.isArray(s.cierres)?s.cierres:[]; s.inicio=s.inicio||Date.now(); });
   ['ent','tie','bar'].forEach(k=>{ D.sec[k].descuentos=Array.isArray(D.sec[k].descuentos)?D.sec[k].descuentos:[]; });
+  ['tie','bar'].forEach(k=>{ const t=D.sec[k]; t.inv=t.inv&&typeof t.inv==='object'?t.inv:{}; t.inv.base=t.inv.base&&typeof t.inv.base==='object'?t.inv.base:{}; t.inv.avisado=t.inv.avisado&&typeof t.inv.avisado==='object'?t.inv.avisado:{}; });
   ['tie','bar'].forEach(k=>{ const t=D.sec[k]; t.inv=t.inv&&typeof t.inv==='object'?t.inv:{}; t.inv.stock=t.inv.stock&&typeof t.inv.stock==='object'?t.inv.stock:{}; t.inv.movs=Array.isArray(t.inv.movs)?t.inv.movs:[]; t.inv.inicial=t.inv.inicial||null; });
   { const t=D.sec.tie;
     t.cesta=t.cesta&&typeof t.cesta==='object'?t.cesta:{}; t.ventas=Array.isArray(t.ventas)?t.ventas:[]; }
   ['ent','tie','bar'].forEach(k=>{ D.sec[k].counts.dir=D.sec[k].counts.dir||{}; });
+  { // Refrescos por separado: se añaden los que falten y se quita el «Refresco» genérico (si tiene consumiciones en el turno abierto, se quitará al cerrarlo).
+    const b=D.sec.bar, cl=n=>String(n).normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/\s+/g,' ').trim(), mov=o=>b.inv.movs.push(Object.assign({id:'m'+Date.now().toString(36)+uid(),fecha:Date.now()},o));
+    D.migr=D.migr&&typeof D.migr==='object'?D.migr:{};
+    if(!D.migr.refrescos){ const viejo=b.productos.find(p=>cl(p.nombre)==='refresco'), pr=viejo?viejo.precio:1.5, pos=viejo?b.productos.indexOf(viejo):b.productos.length;
+      const nuevos=REFRESCOS.filter(n=>!b.productos.some(p=>cl(p.nombre)===cl(n))).map(n=>({id:uid(),cat:'Bebidas',nombre:n,precio:pr}));
+      b.productos.splice(pos,0,...nuevos); nuevos.forEach(p=>mov({tipo:'alta',pid:p.id,nombre:p.nombre,cat:p.cat,precio:p.precio}));
+      D.migr.refrescos=viejo?'falta quitar':'hecho'; }
+    if(D.migr.refrescos==='falta quitar'){ const viejo=b.productos.find(p=>cl(p.nombre)==='refresco');
+      if(!viejo) D.migr.refrescos='hecho';
+      else if(!['ef','tj','dir'].some(m=>(b.counts[m]||{})[viejo.id])){ b.productos=b.productos.filter(p=>p!==viejo); delete b.inv.stock[viejo.id]; delete b.inv.base[viejo.id]; mov({tipo:'baja',pid:viejo.id,nombre:viejo.nombre,cat:viejo.cat||''}); D.migr.refrescos='hecho'; } }
+  }
   D.sec.ent.ventas=Array.isArray(D.sec.ent.ventas)?D.sec.ent.ventas:[];
   // carrito común (entradas + tienda); se hereda lo que hubiera en la antigua cesta de la tienda
   D.carro=D.carro&&typeof D.carro==='object'?D.carro:{}; D.carro.ent=D.carro.ent||{}; D.carro.tie=D.carro.tie||{};
@@ -492,6 +505,7 @@ function cerrarCaja(){
   s.cierres.unshift(c); s.cierres=s.cierres.slice(0,400);
   s.counts={ef:{},tj:{},vy:{}}; s.horas={}; s.descuentos=[]; UI.dsc=null; UI.tkDesc=0; s.counts.dir={}; if(D.pagina==='ent'){ s.visitas=[]; s.ventas=[]; } if(D.pagina==='bar'){ UI.ticket={}; UI.cambio=false; UI.entrega=''; } if(D.pagina==='tie'){ s.ventas=[]; } s.inicio=Date.now(); UI.confirmar=false; UI.contado='';
   D.cola.push({id:c.id,cierre:c}); D.cola=D.cola.slice(-300);
+  if(D.migr&&D.migr.refrescos==='falta quitar') normalizar();
   save(); render(); toast('Caja cerrada: '+eur(c.total)); enviarCola();
 }
 
@@ -926,7 +940,8 @@ function renderHome(){
   if(!UI.gestor) return renderGestor(el);
   if(UI.cesta) return renderCesta(el);
   const G=GESTORES[UI.gestor];
-  const sub=k=>{ if(k==='vy'){ const n=Object.values(D.sec.ent.counts.vy||{}).reduce((a,b)=>a+b,0); return n?`Turno abierto: <b>${n}</b> ${n===1?'entrada':'entradas'} compradas online`:'Compradas online · se apuntan al llegar'; }
+  const sub=k=>sub0(k)+(k==='bar'&&porComprar().length?` · <b class="bad">Comprar: ${porComprar().length} ${porComprar().length===1?'producto':'productos'}</b>`:'');
+  const sub0=k=>{ if(k==='vy'){ const n=Object.values(D.sec.ent.counts.vy||{}).reduce((a,b)=>a+b,0); return n?`Turno abierto: <b>${n}</b> ${n===1?'entrada':'entradas'} compradas online`:'Compradas online · se apuntan al llegar'; }
     const nvy=k==='ent'?Object.values(D.sec.ent.counts.vy||{}).reduce((x,y)=>x+y,0):0;
     const s=D.sec[k], l=s.productos.map(p=>lineaDe(p,m=>(s.counts[m]||{})[p.id]||0)).filter(x=>x.cant);
     const R=conDesc(resumen(l),s); return R.uds?`${turnoViejo(s)?'<b class="bad">Sin cerrar desde '+new Date(s.inicio).toLocaleDateString('es-ES',{weekday:'long',day:'numeric'})+'</b> · ':''}Turno abierto: <b>${eur(R.total)}</b> · ${R.uds} ${k==='ent'?(R.uds===1?'entrada':'entradas'):k==='bar'?(R.uds===1?'consumición':'consumiciones'):(R.uds===1?'artículo':'artículos')}${nvy?` · ${nvy} de la web`:''}`:nvy?`Turno abierto: ${nvy} ${nvy===1?'entrada':'entradas'} de la web`:'Sin ventas en este turno'; };
@@ -1157,7 +1172,7 @@ function renderVender(){
   const hint=m==='vy'?`<p class="vybox"><b>Pregunta al llegar si compraron la entrada en la web (Venteya).</b> Si es así, toca aquí su tipo de entrada, una vez por persona. Cuentan como visitantes y van en el cierre de Entradas, pero no se cobran ni entran en el dinero de la caja.</p>`
     :cr?`<p class="hint">Toca ${D.pagina==='ent'?'una entrada por cada persona y, si se lleva algo de la tienda, añádelo en «Productos de la tienda»':'los artículos'} para ponerlos en el carrito. Al pulsar <b>Cobrar</b> eliges efectivo o tarjeta y, si hace falta, la parte a cargo del director. Hasta confirmar no se apunta nada.</p>`
     :`<p class="hint">Apuntando en <b>${m==='dir'?'la cuenta del director':NOMBRE[m].toLowerCase()}</b>. Toca cada consumición; abajo ves el pedido y el cambio. El botón − quita uno.</p>`;
-  el.innerHTML=tabs+hint+
+  el.innerHTML=tabs+hint+(k==='bar'?`<div id="avisoStock">${htmlAvisoStock()}</div>`:'')+
     gs.map(g=>`<h3 class="cat">${esc(g.k)}</h3><div class="grid">`+g.ps.map(p=>{
       const c=cr?(D.carro[k][p.id]||0):cnt(m,p.id), any=cr?c:m==='vy'?c:(c||cnt('ef',p.id)+cnt('tj',p.id)+cnt('dir',p.id));
       return `<div class="cell" data-cell="${p.id}"><button class="tile${c?' on':''}" data-add="${p.id}" aria-label="${cr?'Añadir al carrito':'Sumar'} ${esc(p.nombre)}">
@@ -1180,6 +1195,25 @@ function movInv(o,k){ const I=inv(k), p=D.sec[k||'tie'].productos.find(x=>x.id==
 /* Bar: los toques seguidos del mismo producto se juntan en un solo movimiento mientras no haya salido hacia la hoja
    (FRESCOS = movimientos creados en esta sesión que todavía no se han intentado enviar). */
 const FRESCOS=new Set(); let tSyncBar=0;
+/* Aviso de «comprar más» (bar): cada producto recuerda su REFERENCIA, el total que había justo después de la última
+   reposición o recuento al alza (había 30, llegan 100 → 130). Cuando quedan menos del 30 % de esa cifra, se avisa. */
+const UMBRAL_AVISO=0.3;
+const baseDe=id=>{ const v=inv('bar').base[id]; return typeof v==='number'&&v>0?v:null; };
+const pocoStock=id=>{ const st=stockDe(id,'bar'), b=baseDe(id); return st!=null&&b!=null&&st<b*UMBRAL_AVISO; };
+const porComprar=()=>D.sec.bar.productos.filter(p=>pocoStock(p.id));
+function htmlAvisoStock(){ const L=porComprar(); if(!L.length) return '';
+  return `<div class="aviso" role="status"><b>Hay que comprar más:</b> `+L.map(p=>`${esc(p.nombre)} (${stockDe(p.id,'bar')<=0?'no queda':'quedan '+stockDe(p.id,'bar')} de ${baseDe(p.id)})`).join(' · ')+`</div>`; }
+function pintarAvisoStock(){ const el=document.getElementById('avisoStock'); if(el) el.innerHTML=htmlAvisoStock(); }
+// Avisa una sola vez cada vez que un producto baja del umbral (y otra vez si se repone y vuelve a bajar).
+function revisarAvisos(){
+  const I=inv('bar'), nuevos=[];
+  D.sec.bar.productos.forEach(p=>{ const poco=pocoStock(p.id); if(poco&&!I.avisado[p.id]){ I.avisado[p.id]=Date.now(); nuevos.push(p); } else if(!poco&&I.avisado[p.id]) delete I.avisado[p.id]; });
+  Object.keys(I.avisado).forEach(id=>{ if(!D.sec.bar.productos.some(p=>p.id===id)) delete I.avisado[id]; });
+  pintarAvisoStock(); if(!nuevos.length) return;
+  const txt=nuevos.map(p=>`${p.nombre} (${Math.max(0,stockDe(p.id,'bar'))} de ${baseDe(p.id)})`).join(', ');
+  setTimeout(()=>toast('Hay que comprar más: '+txt),UI.home?0:2600);
+  try{ if('Notification' in window&&Notification.permission==='granted'&&navigator.serviceWorker) navigator.serviceWorker.ready.then(r=>r.showNotification('Bar: hay que comprar más',{body:txt,tag:'stock-bar',icon:'icon-192.png'})).catch(()=>{}); }catch(e){}
+}
 function stockBar(id,d,p){
   const st=stockDe(id,'bar'); if(st==null||!p) return;
   const I=inv('bar'), nv=st-d; I.stock[id]=nv;
@@ -1187,6 +1221,7 @@ function stockBar(id,d,p){
   if(m){ m.cambio-=d; m.despues=nv; m.tipo=m.cambio<0?'venta':'anulación'; if(!m.cambio){ I.movs=I.movs.filter(x=>x!==m); FRESCOS.delete(m.id); } }
   else FRESCOS.add(movInv({tipo:d>0?'venta':'anulación',pid:id,nombre:p.nombre,antes:st,despues:nv,cambio:-d},'bar').id);
   clearTimeout(tSyncBar); tSyncBar=setTimeout(()=>sincronizarInv(false,'bar'),15000);
+  revisarAvisos();
 }
 /* --- sincronización con la hoja «Inventario» del registro (la hoja manda en el total) ---
    Cada movimiento se envía una vez con su id; el servidor no repite los que ya tiene. Cuando ya no queda nada
@@ -1210,12 +1245,14 @@ async function sincronizarInv(manual,k){
       const ok=new Set(res.hechos||[]); I.movs.forEach(m=>{ if(ok.has(m.id)) m.env=true; });
       if(I.movs.some(m=>!m.env)){ save(); if(pend.length) continue; return; }
       let cambios=0, cat=0;
-      if(bar) cat=aplicarCatalogoBar(res.catalogo);
+      if(bar){ cat=aplicarCatalogoBar(res.catalogo);
+        res.catalogo.forEach(c=>{ if(typeof c.ref!=='number'||!(c.ref>0)) return; const p=D.sec.bar.productos.find(x=>claveArt(x.nombre)===claveArt(c.nombre)); if(p) I.base[p.id]=c.ref; }); }
       const S=res.stock||{}, M={};
       Object.keys(S).forEach(n=>M[claveArt(n)]=S[n]);
       D.sec[k].productos.forEach(p=>{ const v=M[claveArt(p.nombre)]; if(typeof v==='number'&&I.stock[p.id]!==v){ I.stock[p.id]=v; cambios++; } });
       if(Object.keys(S).length&&!I.inicial) I.inicial={fecha:Date.now(),desdeHoja:true};
-      I.sync=Date.now(); save();
+      I.sync=Date.now(); if(bar) revisarAvisos(); save();
+      if(UI.home&&bar&&porComprar().length) renderFondo();
       if(!UI.home&&D.pagina===k&&!UI.invEd){ if(cat) renderFondo(); else if(UI.view==='Inventario') render(); else if(UI.view==='Vender') D.sec[k].productos.forEach(p=>pintarCelda(p.id)); }
       if(manual) toast(cambios||cat?`Sincronizado: ${cambios} ${cambios===1?'cifra actualizada':'cifras actualizadas'}${cat?` y ${cat} ${cat===1?'producto':'productos'}`:''} desde la hoja`:'Sincronizado con la hoja');
       return;
@@ -1230,13 +1267,13 @@ function aplicarCatalogoBar(C){
   const pendientes=new Set(I.movs.filter(m=>!m.env).map(m=>claveArt(m.nombre)));
   C.forEach(c=>{ const nombre=String(c.nombre||'').trim(), kk=claveArt(nombre); if(!nombre||pendientes.has(kk)) return;
     const p=s.productos.find(x=>claveArt(x.nombre)===kk);
-    if(c.quitado){ if(p&&!['ef','tj','dir'].some(m=>(s.counts[m]||{})[p.id])&&!UI.ticket[p.id]){ s.productos=s.productos.filter(x=>x!==p); delete I.stock[p.id]; n++; } }
+    if(c.quitado){ if(p&&!['ef','tj','dir'].some(m=>(s.counts[m]||{})[p.id])&&!UI.ticket[p.id]){ s.productos=s.productos.filter(x=>x!==p); delete I.stock[p.id]; delete I.base[p.id]; n++; } }
     else if(!p&&typeof c.precio==='number'&&c.precio>=0){ s.productos.push({id:uid(),nombre:nombre.slice(0,120),precio:r2(c.precio),cat:String(c.cat||'Otros').slice(0,40)||'Otros'}); n++; } });
   return n;
 }
 function htmlStock(id,k){ const st=stockDe(id,k), q=k==='bar'?0:(cesta()[id]||0);
   if(st==null) return k==='bar'?'<span class="st" style="display:none"></span>':'<span class="st muted">Sin inventario</span>';
-  const cls=st-q<0?' bad':st<=3?' warn':''; return `<span class="st${cls}">Quedan ${st}${q?` → ${st-q}`:''}</span>`; }
+  const poco=k==='bar'&&pocoStock(id), cls=st-q<0||(poco&&st<=0)?' bad':st<=3||poco?' warn':''; return `<span class="st${cls}">Quedan ${st}${q?` → ${st-q}`:''}${poco?'<br>Comprar más':''}</span>`; }
 /* ================= carrito común y cobro =================
    El carrito junta entradas (caja de Entradas) y artículos (caja de Tienda). No se apunta nada hasta «Confirmar cobro».
    El método de pago se elige al cobrar y puede cambiarse sin tocar el carrito. Cada unidad va a efectivo, tarjeta o
@@ -1385,7 +1422,9 @@ function guardarAjuste(){
   if(E.motivo==='Otro'&&!(E.nota||'').trim()) return toast('Explica el motivo en la nota');
   const k=ik();
   C.forEach(({p,nv})=>{ const antes=stockDe(p.id,k); inv(k).stock[p.id]=nv.v;
+    if(k==='bar'&&nv.v>0&&(antes==null||nv.v>antes||baseDe(p.id)==null)) inv(k).base[p.id]=nv.v;
     movInv({tipo:nv.tipo,pid:p.id,nombre:p.nombre,antes,despues:nv.v,cambio:nv.v-(antes||0),motivo:E.motivo,nota:(E.nota||'').trim().slice(0,120)},k); });
+  if(k==='bar') revisarAvisos();
   UI.invEd=null; save(); render(); window.scrollTo(0,0); sincronizarInv(false,k); toast(`Inventario guardado: ${C.length} ${C.length===1?'cambio':'cambios'}`);
 }
 function renderInventario(){
@@ -1404,9 +1443,9 @@ function renderInventario(){
   { const I=inv(k), pend=I.movs.filter(m=>!m.env).length, on=D.envio.url&&D.envio.clave;
     h+=`<div class="sync small"><span class="grow">${!on?'<b class="bad">Sin conexión con la hoja:</b> configura el envío automático en Tarifas.':pend?`<b class="warn">${pend} ${pend===1?'cambio pendiente':'cambios pendientes'}</b> de enviar a la hoja ${HOJA}.`:I.sync?`Sincronizado con la hoja ${HOJA} ${new Date(I.sync).toLocaleString('es-ES',{day:'numeric',month:'numeric',hour:'2-digit',minute:'2-digit'})}.`:'Aún no se ha sincronizado con la hoja.'}</span>${on?'<button class="x" data-act="invSync">Sincronizar</button>':''}</div>`; }
   if(!bar&&!inv().inicial) h+=htmlInicial();
-  if(bar) h+=`<p class="small" style="margin:0 0 10px">Cada consumición que se apunta en el bar resta una unidad, y el botón − la devuelve. Lo que está <b>«Sin contar»</b> no se descuenta: cuenta solo lo que tenga sentido (helados, refrescos, cervezas, snacks…). Los productos se añaden en <b>Tarifas</b> y llegan a todos los móviles.</p>`;
+  if(bar) h+=`<p class="small" style="margin:0 0 10px">Cada consumición que se apunta en el bar resta una unidad, y el botón − la devuelve. Lo que está <b>«Sin contar»</b> no se descuenta: cuenta solo lo que tenga sentido (helados, refrescos, cervezas, snacks…). Los productos se añaden en <b>Tarifas</b> y llegan a todos los móviles. Cuando de un producto quede <b>menos del 30 %</b> de lo que había tras la última reposición, la app avisa de que hay que comprar más.</p><div id="avisoStock">${htmlAvisoStock()}</div>${'Notification' in window&&Notification.permission==='default'?'<button class="btn ghost" data-act="notifOn" style="margin-bottom:12px">Activar notificaciones en este móvil</button>':''}`;
   h+=`<div class="card">`+gs.map(g=>`<div class="row sub">${esc(g.k)}</div>`+g.ps.map(p=>{ const st=stockDe(p.id,k);
-    return `<div class="inv-row"><span class="grow">${esc(p.nombre)}</span><b class="inv-n${st==null?' muted':st<=0?' bad':st<=3?' warn':''}">${st==null?'Sin contar':st+' ud.'}</b></div>`; }).join('')).join('')+`</div>
+    return `<div class="inv-row"><span class="grow">${esc(p.nombre)}</span><b class="inv-n${st==null?' muted':st<=0?' bad':st<=3||(bar&&pocoStock(p.id))?' warn':''}">${st==null?'Sin contar':st+' ud.'+(bar&&baseDe(p.id)!=null?`<span class="small" style="font-weight:500"> de ${baseDe(p.id)}</span>`:'')+(bar&&pocoStock(p.id)?' · comprar':'')}</b></div>`; }).join('')).join('')+`</div>
     <button class="btn" data-act="invEditar" style="margin-top:12px">Modificar inventario</button>`;
   const todo=!!UI.invTodo, M=inv(k).movs.filter(x=>!['alta','baja'].includes(x.tipo)&&(todo||!['venta','anulación'].includes(x.tipo))).slice().reverse().slice(0,60);
   h+=`<h3 style="margin-top:22px">Historial de ajustes</h3>
@@ -1645,6 +1684,7 @@ document.addEventListener('click',e=>{
   if(a==='invGuardar') guardarAjuste();
   if(a==='iniGuardar') guardarInicial();
   if(a==='invSync') sincronizarInv(true,ik());
+  if(a==='notifOn'){ try{ Notification.requestPermission().then(r=>{ render(); toast(r==='granted'?'Notificaciones activadas en este móvil':'Notificaciones no activadas'); }); }catch(e){ toast('Este móvil no admite notificaciones'); } }
   if(a==='iniManual'){ inv().inicial={fecha:Date.now(),manual:true}; save(); render(); }
   if(a==='dscAbrir') abrirDescuento();
   if(a==='dscCancelar'){ UI.dsc=null; render(); }
