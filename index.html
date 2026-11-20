@@ -372,6 +372,8 @@ function normalizar(){
       else if(!['ef','tj','dir'].some(m=>(b.counts[m]||{})[viejo.id])){ b.productos=b.productos.filter(p=>p!==viejo); delete b.inv.stock[viejo.id]; delete b.inv.base[viejo.id]; mov({tipo:'baja',pid:viejo.id,nombre:viejo.nombre,cat:viejo.cat||''}); D.migr.refrescos='hecho'; } }
   }
   D.sec.ent.ventas=Array.isArray(D.sec.ent.ventas)?D.sec.ent.ventas:[];
+  // Tarifas comunes de Entradas y Tienda: altas y bajas pendientes de mandar a la hoja «Tarifas»
+  D.tar=D.tar&&typeof D.tar==='object'?D.tar:{}; ['ent','tie'].forEach(k=>{ const t=D.tar[k]=D.tar[k]&&typeof D.tar[k]==='object'?D.tar[k]:{}; t.pend=Array.isArray(t.pend)?t.pend:[]; t.sync=t.sync||0; });
   // carrito común (entradas + tienda); se hereda lo que hubiera en la antigua cesta de la tienda
   D.carro=D.carro&&typeof D.carro==='object'?D.carro:{}; D.carro.ent=D.carro.ent||{}; D.carro.tie=D.carro.tie||{};
   if(Object.keys(D.sec.tie.cesta).length){ Object.entries(D.sec.tie.cesta).forEach(([id,q])=>{ D.carro.tie[id]=(D.carro.tie[id]||0)+q; }); D.sec.tie.cesta={}; }
@@ -1121,7 +1123,10 @@ function bloqueEnvio(){
 window.addEventListener('online',enviarCola);
 setInterval(enviarCola,60000);
 /* inventario: lo pendiente se envía en cuanto hay conexión; con la Tienda abierta se recogen además cada 5 min los cambios hechos en la hoja */
-window.addEventListener('online',()=>{ sincronizarInv(); sincronizarInv(false,'bar'); });
+window.addEventListener('online',()=>{ sincronizarInv(); sincronizarInv(false,'bar'); sincronizarTarifas('ent'); sincronizarTarifas('tie'); });
+/* tarifas: lo pendiente se manda en cuanto hay conexión, y cada 5 min se recogen los cambios de los demás móviles */
+setInterval(()=>['ent','tie'].forEach(k=>{ const T=D.tar[k]; if(T.pend.length||Date.now()-(T.sync||0)>5*60e3) sincronizarTarifas(k); }),60000);
+setTimeout(()=>{ sincronizarTarifas('ent'); sincronizarTarifas('tie'); },2500);   // al abrir la app
 setInterval(()=>['tie','bar'].forEach(k=>{ const I=inv(k), pend=I.movs.some(m=>!m.env), dentro=!UI.home&&D.pagina===k;
   if(pend||(dentro&&Date.now()-(I.sync||0)>5*60e3)) sincronizarInv(false,k); }),60000);
 setTimeout(()=>{ const I=inv(); if(I.inicial||I.movs.length) sincronizarInv(); sincronizarInv(false,'bar'); },1500);   // al abrir la app
@@ -1273,6 +1278,40 @@ function aplicarCatalogoBar(C){
     else if(p){ let cambia=false; const cat=String(c.cat||'').trim().slice(0,40);
       if(cat&&cat!==p.cat){ p.cat=cat; cambia=true; }
       if(typeof c.precio==='number'&&c.precio>=0&&r2(c.precio)!==p.precio&&!['ef','tj','dir'].some(m=>(s.counts[m]||{})[p.id])&&!UI.ticket[p.id]){ p.precio=r2(c.precio); cambia=true; }
+      if(cambia) n++; } });
+  return n;
+}
+/* ================= Tarifas comunes de Entradas y Tienda =================
+   La hoja «Tarifas» lleva la lista de productos de Entradas y de la Tienda. Lo que se añade o se quita aquí se manda allí,
+   y lo que otro móvil (o la hoja) añadió, quitó o cambió de precio o de sección se aplica aquí. Quitar o cambiar el precio
+   espera si el producto tiene ventas en el turno abierto o está en el carrito: se hará después. */
+function cambioTarifa(k,o){ if(!D.tar[k]) return; D.tar[k].pend.push(Object.assign({id:'t'+Date.now().toString(36)+uid(),fecha:Date.now()},o)); }
+const sincronizandoTar={};
+async function sincronizarTarifas(k,manual){
+  const T=D.tar[k]; if(!T) return;
+  if(!D.envio.url||!D.envio.clave||navigator.onLine===false||sincronizandoTar[k]) return; sincronizandoTar[k]=true;
+  try{
+    const pend=T.pend.slice(0,300), s=D.sec[k];
+    const res=await postEnvio({tipo:'tarifas',sec:k,cambios:pend,prods:s.productos.map(p=>({nombre:p.nombre,cat:p.cat||'',precio:p.precio}))});
+    if(!res||!res.ok||!Array.isArray(res.catalogo)){ if(manual) toast(res&&res.error==='clave'?'La clave del envío no es correcta.':'No se pudieron sincronizar las tarifas. Se reintentará.'); return; }
+    const ok=new Set(res.hechos||[]); T.pend=T.pend.filter(c=>!ok.has(c.id));
+    const n=aplicarCatalogo(k,res.catalogo); T.sync=Date.now(); save();
+    if(n&&!UI.home&&(D.pagina===k||(k==='tie'&&D.pagina==='ent'))) render();
+    if(manual&&n) toast(`Tarifas actualizadas: ${n} ${n===1?'cambio':'cambios'}`);
+  }catch(e){ if(manual) toast('No se pudo conectar con la hoja. Se reintentará.'); }
+  finally{ sincronizandoTar[k]=false; }
+}
+function aplicarCatalogo(k,C){
+  const s=D.sec[k]; let n=0;
+  const pendientes=new Set(D.tar[k].pend.map(c=>claveArt(c.nombre)));
+  const ocupado=p=>['ef','tj','vy','dir'].some(m=>(s.counts[m]||{})[p.id])||(D.carro[k]||{})[p.id];
+  C.forEach(c=>{ const nombre=String(c.nombre||'').trim(), kk=claveArt(nombre); if(!nombre||pendientes.has(kk)) return;
+    const p=s.productos.find(x=>claveArt(x.nombre)===kk);
+    if(c.quitado){ if(p&&!ocupado(p)){ s.productos=s.productos.filter(x=>x!==p); ['ef','tj','vy'].forEach(m=>{ if(s.counts[m]) delete s.counts[m][p.id]; }); n++; } }
+    else if(!p){ if(typeof c.precio==='number'&&c.precio>=0){ s.productos.push({id:uid(),nombre:nombre.slice(0,120),precio:r2(c.precio),cat:String(c.cat||'Otros').slice(0,40)||'Otros'}); n++; } }
+    else { let cambia=false; const cat=String(c.cat||'').trim().slice(0,40);
+      if(cat&&cat!==p.cat){ p.cat=cat; cambia=true; }
+      if(typeof c.precio==='number'&&c.precio>=0&&r2(c.precio)!==p.precio&&!ocupado(p)){ p.precio=r2(c.precio); cambia=true; }
       if(cambia) n++; } });
   return n;
 }
@@ -1646,7 +1685,7 @@ document.addEventListener('click',e=>{
   if(b.dataset.p){ D.pagina=b.dataset.p; UI.invEd=null; UI.filtro='Todo'; UI.confirmar=false; UI.contado=''; save(); render(); window.scrollTo(0,0); return; }
   if(b.dataset.m){ D.metodo=b.dataset.m; save(); render(); return; }
   if(b.dataset.f){ UI.filtro=b.dataset.f; document.querySelectorAll('#chips button').forEach(x=>x.setAttribute('aria-pressed',x===b)); renderVender(); return; }
-  if(b.dataset.v){ UI.view=b.dataset.v; UI.confirmar=false; UI.editT=false; render(); window.scrollTo(0,0); if(UI.view==='Inventario') sincronizarInv(false,ik()); return; }
+  if(b.dataset.v){ UI.view=b.dataset.v; UI.confirmar=false; UI.editT=false; render(); window.scrollTo(0,0); if(UI.view==='Inventario') sincronizarInv(false,ik()); if(UI.view==='Carta'&&D.tar[D.pagina]) sincronizarTarifas(D.pagina); return; }
   if(b.dataset.pm){ UI.pago.m=b.dataset.pm; if(UI.pago.m!=='ef') UI.pago.entrega=''; renderTicket(); return; }
   if(b.dataset.crq){ const [k,id]=b.dataset.crq.split(':'); aCarro(k,id,+b.dataset.d); return; }
   if(b.dataset.crd){ const key=b.dataset.crd, [k,id]=key.split(':'), q=D.carro[k][id]||0, v=Math.max(0,Math.min(q,(UI.pago.dir[key]||0)+(+b.dataset.d))); if(v) UI.pago.dir[key]=v; else delete UI.pago.dir[key]; renderTicket(); return; }
@@ -1664,7 +1703,8 @@ document.addEventListener('click',e=>{
     if(p&&cnt('dir',id)){ UI.borrarP=null; render(); return toast('No se puede quitar: tiene ventas en el turno abierto. Ciérralo antes.'); }
     UI.borrarP=null; s.productos=s.productos.filter(x=>x.id!==id); delete s.counts.ef[id]; delete s.counts.tj[id]; if(s.counts.vy) delete s.counts.vy[id];
     if(D.pagina==='bar'&&p){ movInv({tipo:'baja',pid:id,nombre:p.nombre,cat:p.cat||''},'bar'); delete inv('bar').stock[id]; }
-    save(); render(); if(D.pagina==='bar') sincronizarInv(false,'bar'); return toast('Quitado: '+(p?p.nombre:'')); }
+    if(D.tar[D.pagina]&&p) cambioTarifa(D.pagina,{tipo:'baja',nombre:p.nombre});
+    save(); render(); if(D.pagina==='bar') sincronizarInv(false,'bar'); else sincronizarTarifas(D.pagina); return toast('Quitado: '+(p?p.nombre:'')); }
   if(b.dataset.anular){ const id=b.dataset.anular; if(UI.anularV!==id){ UI.anularV=id; render(); clearTimeout(UI.anularT); UI.anularT=setTimeout(()=>{ if(UI.anularV===id){ UI.anularV=null; render(); } },5000); return; } UI.anularV=null; return anularVenta(id); }
   if(b.dataset.invd){ const id=b.dataset.invd, E=UI.invEd; if(!E) return; const r=E.d[id]=E.d[id]||{delta:0,recuento:''}; r.recuento=''; r.delta+=+b.dataset.paso; pintarFilaAjuste(id); return; }
   if(b.dataset.invh!=null){ UI.invTodo=b.dataset.invh==='1'; render(); return; }
@@ -1755,10 +1795,11 @@ document.addEventListener('submit',e=>{
   if(e.target.id!=='fAdd') return; e.preventDefault();
   const n=document.getElementById('pNombre').value.trim(), p=num(document.getElementById('pPrecio').value), cat=document.getElementById('pCat').value;
   if(!n||isNaN(p)||p<0){toast('Escribe un nombre y un precio válido (0 si es gratuita)');return;}
-  if(D.pagina==='bar'&&sec().productos.some(x=>claveArt(x.nombre)===claveArt(n))) return toast('Ya hay un producto con ese nombre en el bar');
+  if(sec().productos.some(x=>claveArt(x.nombre)===claveArt(n))) return toast('Ya hay un producto con ese nombre');
   const nuevo={id:uid(),nombre:n,precio:r2(p),cat}; sec().productos.push(nuevo);
   if(D.pagina==='bar') movInv({tipo:'alta',pid:nuevo.id,nombre:n,cat,precio:nuevo.precio},'bar');
-  save(); render(); toast('Añadido: '+n); if(D.pagina==='bar') sincronizarInv(false,'bar');
+  if(D.tar[D.pagina]) cambioTarifa(D.pagina,{tipo:'alta',nombre:n,cat,precio:nuevo.precio});
+  save(); render(); toast('Añadido: '+n); if(D.pagina==='bar') sincronizarInv(false,'bar'); else sincronizarTarifas(D.pagina);
 });
 let tt, toastFn=null; function toast(m,accion,fn){const t=document.getElementById('toast');t.textContent=m;toastFn=null;
   if(accion&&fn){const b=document.createElement('button');b.type='button';b.textContent=accion;b.dataset.toast='1';t.appendChild(b);toastFn=fn;}
