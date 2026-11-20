@@ -1261,14 +1261,19 @@ async function sincronizarInv(manual,k){
   finally{ sincronizandoInv[k]=false; }
 }
 /* Bar: la hoja «Inventario bar» lleva la lista de productos. Lo que otro móvil añadió en Tarifas se añade aquí;
-   lo que otro móvil quitó se quita aquí (salvo que tenga consumiciones en el turno abierto: se quitará después). */
+   lo que otro móvil quitó se quita aquí, y si otro móvil (o la hoja) cambió el precio o la sección, se cambia aquí.
+   Quitar o cambiar el precio espera si el producto tiene consumiciones en el turno abierto: se hará tras el cierre. */
 function aplicarCatalogoBar(C){
   const s=D.sec.bar, I=inv('bar'); let n=0;
   const pendientes=new Set(I.movs.filter(m=>!m.env).map(m=>claveArt(m.nombre)));
   C.forEach(c=>{ const nombre=String(c.nombre||'').trim(), kk=claveArt(nombre); if(!nombre||pendientes.has(kk)) return;
     const p=s.productos.find(x=>claveArt(x.nombre)===kk);
     if(c.quitado){ if(p&&!['ef','tj','dir'].some(m=>(s.counts[m]||{})[p.id])&&!UI.ticket[p.id]){ s.productos=s.productos.filter(x=>x!==p); delete I.stock[p.id]; delete I.base[p.id]; n++; } }
-    else if(!p&&typeof c.precio==='number'&&c.precio>=0){ s.productos.push({id:uid(),nombre:nombre.slice(0,120),precio:r2(c.precio),cat:String(c.cat||'Otros').slice(0,40)||'Otros'}); n++; } });
+    else if(!p&&typeof c.precio==='number'&&c.precio>=0){ s.productos.push({id:uid(),nombre:nombre.slice(0,120),precio:r2(c.precio),cat:String(c.cat||'Otros').slice(0,40)||'Otros'}); n++; }
+    else if(p){ let cambia=false; const cat=String(c.cat||'').trim().slice(0,40);
+      if(cat&&cat!==p.cat){ p.cat=cat; cambia=true; }
+      if(typeof c.precio==='number'&&c.precio>=0&&r2(c.precio)!==p.precio&&!['ef','tj','dir'].some(m=>(s.counts[m]||{})[p.id])&&!UI.ticket[p.id]){ p.precio=r2(c.precio); cambia=true; }
+      if(cambia) n++; } });
   return n;
 }
 function htmlStock(id,k){ const st=stockDe(id,k), q=k==='bar'?0:(cesta()[id]||0);
@@ -1752,7 +1757,7 @@ document.addEventListener('submit',e=>{
   if(!n||isNaN(p)||p<0){toast('Escribe un nombre y un precio válido (0 si es gratuita)');return;}
   if(D.pagina==='bar'&&sec().productos.some(x=>claveArt(x.nombre)===claveArt(n))) return toast('Ya hay un producto con ese nombre en el bar');
   const nuevo={id:uid(),nombre:n,precio:r2(p),cat}; sec().productos.push(nuevo);
-  if(D.pagina==='bar') movInv({tipo:'alta',pid:nuevo.id,nombre:n,precio:nuevo.precio},'bar');
+  if(D.pagina==='bar') movInv({tipo:'alta',pid:nuevo.id,nombre:n,cat,precio:nuevo.precio},'bar');
   save(); render(); toast('Añadido: '+n); if(D.pagina==='bar') sincronizarInv(false,'bar');
 });
 let tt, toastFn=null; function toast(m,accion,fn){const t=document.getElementById('toast');t.textContent=m;toastFn=null;
